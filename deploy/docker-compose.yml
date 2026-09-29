@@ -1,0 +1,29 @@
+# Storybook for @burgwiss/ui on the infra box, behind the existing Traefik
+# `edge-proxy` (/opt/edge). Lives at /opt/ui-storybook on the box; its own
+# compose project so the edge compose is never edited for it.
+#
+# The site is a static directory (`npm run storybook:build`), rsynced into
+# ./site by deploy/publish-storybook.sh. nginx only serves it.
+services:
+    ui-storybook:
+        image: nginx:1.27-alpine
+        container_name: ui-storybook
+        restart: unless-stopped
+        volumes:
+            - ./site:/usr/share/nginx/html:ro
+        labels:
+            - traefik.enable=true
+            - traefik.docker.network=coolify
+            - traefik.http.routers.ui-storybook-http.rule=Host(`ui.infra.burgwiss.com`)
+            - traefik.http.routers.ui-storybook-http.entrypoints=http
+            - traefik.http.routers.ui-storybook-http.middlewares=ui-storybook-redir
+            - traefik.http.middlewares.ui-storybook-redir.redirectscheme.scheme=https
+            - traefik.http.routers.ui-storybook.rule=Host(`ui.infra.burgwiss.com`)
+            - traefik.http.routers.ui-storybook.entrypoints=https
+            - traefik.http.routers.ui-storybook.tls.certresolver=letsencrypt
+            - traefik.http.services.ui-storybook.loadbalancer.server.port=80
+        networks:
+            - coolify
+networks:
+    coolify:
+        external: true

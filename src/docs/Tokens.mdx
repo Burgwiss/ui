@@ -1,0 +1,51 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Tokens" />
+
+# Tokens
+
+Die CSS-Variablen aus `src/tokens/theme.css` sind die öffentliche Schnittstelle
+des Themes. Eine App überschreibt sie auf `:root` — Burgwiss tut das pro Schule.
+**Umbenennen oder Entfernen ist ein Breaking Change.**
+
+export const Swatch = ({ name }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '6px 0' }}>
+        <div
+            style={{
+                width: 40,
+                height: 40,
+                borderRadius: 8,
+                background: `var(--${name})`,
+                border: '1px solid var(--border)',
+            }}
+        />
+        <code>--{name}</code>
+    </div>
+);
+
+## Flächen und Text
+
+<Swatch name="background" />
+<Swatch name="foreground" />
+<Swatch name="card" />
+<Swatch name="muted" />
+<Swatch name="muted-foreground" />
+<Swatch name="border" />
+
+## Marke
+
+<Swatch name="primary" />
+<Swatch name="primary-foreground" />
+<Swatch name="accent" />
+<Swatch name="accent-strong" />
+<Swatch name="ring" />
+
+## Status
+
+<Swatch name="success" />
+<Swatch name="warning" />
+<Swatch name="destructive" />
+
+Text auf einer getönten Fläche (`bg-success/10`) nutzt immer
+`text-success-tint-foreground`, nie `text-success` — die volle Farbe erreicht
+auf ihrer eigenen Tönung keinen AA-Kontrast. ESLint prüft das.

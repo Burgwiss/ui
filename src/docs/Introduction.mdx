@@ -1,0 +1,34 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Einführung" />
+
+# @burgwiss/ui
+
+Das gemeinsame Design-System aller Burgwiss-Apps. Eine Komponente hier sieht in
+jeder App gleich aus, verhält sich gleich und wird an einer Stelle repariert.
+
+## Atomic Design — wo gehört eine Komponente hin?
+
+- **Tokens** — Welche Farbe, welcher Radius, welche Schrift? `--primary`, `--radius`, `--font-sans`
+- **Atoms** — ein einzelnes Element ohne andere Komponenten darin: Button, Input, Label, Separator
+- **Molecules** — wenige Atome, die als _ein_ Bedienelement arbeiten: IconButton, SearchField, Tooltip
+- **Organisms** — ein eigenständiger Abschnitt aus Molekülen: DropdownMenu, Table, GridActions, GridColumnFilter, GridFooter
+- **Templates** — ein Seitenlayout mit Slots, ohne eigene Daten: GridPage
+
+Seiten (Pages) gibt es hier bewusst nicht: Seiten kennen Daten, Routen und
+Übersetzungen, und die gehören der App.
+
+## Drei Regeln, die ESLint erzwingt
+
+1. **Keine App darin.** Kein Router, keine Übersetzungs-Bibliothek, kein HTTP,
+   keine App-Aliase. Texte und Links kommen als Props.
+2. **Keine eigenen Texte.** Jeder sichtbare Text ist ein Prop — so kann jede App
+   ihre Sprache mitbringen.
+3. **Nur Tokens, keine Farben.** `bg-primary` statt `bg-blue-500`. Wer das Theme
+   ändern will, überschreibt CSS-Variablen.
+
+## Oben rechts
+
+- **Mode** schaltet hell/dunkel.
+- **Brand** tauscht die Primärfarbe — ein Beweis, dass jede Komponente nur Tokens liest.
+- Das **Accessibility**-Panel prüft jede Story mit axe.
