@@ -321,3 +321,21 @@ describe('diffTree', () => {
         });
     });
 });
+
+describe('diffTree — a swap of neighbours', () => {
+    it('names the node the reader moved when a swap could be read either way', () => {
+        const next = moveNode(TREE, 'arabisch', null, 2); // arabisch one down: koran,arabisch,kunst
+        expect(diffTree(TREE, next)).toMatchObject({ type: 'move', id: 'koran' });
+        expect(diffTree(TREE, next, 'arabisch')).toEqual({
+            type: 'move',
+            id: 'arabisch',
+            parentId: null,
+            index: 2,
+        });
+    });
+
+    it('ignores a hint that does not explain the change', () => {
+        const next = moveNode(TREE, 'kunst', 'arabisch', 0);
+        expect(diffTree(TREE, next, 'koran')).toMatchObject({ type: 'move', id: 'kunst' });
+    });
+});

@@ -225,8 +225,12 @@ function allIds(nodes: TreeNode[]): string[] {
  * as it happens. Null when nothing changed. When more than one thing changed
  * it reports the first it finds (removals, then additions, renames, moves);
  * a `CategoryTree` edit is always exactly one.
+ *
+ * Swapping two neighbours reads as either one moving down or the other
+ * moving up. Pass `moved`, the node the reader actually moved, and the
+ * change names that one, so "Koran moved" is not reported as "Arabisch moved".
  */
-export function diffTree(prev: TreeNode[], next: TreeNode[]): TreeChange | null {
+export function diffTree(prev: TreeNode[], next: TreeNode[], moved?: string): TreeChange | null {
     if (prev === next) return null;
     const before = new Set(allIds(prev));
     const after = new Set(allIds(next));
@@ -251,7 +255,8 @@ export function diffTree(prev: TreeNode[], next: TreeNode[]): TreeChange | null 
         if (was.label !== now.label) return { type: 'rename', id, label: now.label };
     }
 
-    for (const id of after) {
+    const candidates = moved !== undefined && after.has(moved) ? [moved, ...after] : after;
+    for (const id of candidates) {
         const was = locate(prev, id)!;
         const now = locate(next, id)!;
         if (was.parentId === now.parentId && was.index === now.index) continue;

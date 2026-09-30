@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { TreeNode } from '../../lib/tree';
-import { CategoryTree, type CategoryTreeProps } from './CategoryTree';
+import { CategoryTree, newId, type CategoryTreeProps } from './CategoryTree';
 import { CATEGORY_TREE_LABELS as LABELS } from './CategoryTree.fixtures';
 
 afterEach(() => localStorage.clear());
@@ -241,6 +241,18 @@ describe('CategoryTree — says what each edit was', () => {
 
         await user.keyboard('{Delete}');
         expect(last()).toEqual({ type: 'remove', id: 'neu-1' });
+    });
+
+    it('names the category the reader moved, also in a swap of neighbours', async () => {
+        const { user, onNodesChange } = setup();
+        await enter(user); // focus on Arabisch
+        await user.keyboard('{Alt>}{ArrowDown}{/Alt}');
+        expect(onNodesChange.mock.lastCall?.[1]).toEqual({
+            type: 'move',
+            id: 'arabisch',
+            parentId: null,
+            index: 2,
+        });
     });
 });
 
@@ -537,5 +549,36 @@ describe('CategoryTree — opening a category to edit it', () => {
         ).toEqual(['Bearbeiten']);
         await user.keyboard('{Enter}');
         expect(onEdit).toHaveBeenCalledWith('arabisch');
+    });
+});
+
+describe('CategoryTree — new ids', () => {
+    it('makes an id without crypto.randomUUID, which plain http does not have', () => {
+        const original = crypto.randomUUID;
+        // @ts-expect-error — simulate an insecure context
+        crypto.randomUUID = undefined;
+        try {
+            const a = newId();
+            const b = newId();
+            expect(a).toMatch(/^[0-9a-f]{32}$/);
+            expect(a).not.toBe(b);
+        } finally {
+            crypto.randomUUID = original;
+        }
+    });
+
+    it('adds a category with the default id maker when randomUUID is missing', async () => {
+        const original = crypto.randomUUID;
+        // @ts-expect-error — simulate an insecure context
+        crypto.randomUUID = undefined;
+        try {
+            const { user, onNodesChange } = setup({ createId: undefined });
+            await user.click(screen.getByRole('button', { name: 'Neue Kategorie' }));
+            await user.keyboard('Kinder{Enter}');
+            expect(onNodesChange).toHaveBeenCalledTimes(1);
+            expect(onNodesChange.mock.lastCall?.[1]).toMatchObject({ type: 'add', label: 'Kinder' });
+        } finally {
+            crypto.randomUUID = original;
+        }
     });
 });

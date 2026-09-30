@@ -140,7 +140,7 @@ export interface CategoryTreeProps {
      * that include subcategories if that is what the page means. Missing ids show none.
      */
     counts?: Record<string, number>;
-    /** Makes the id of a new category. Default `crypto.randomUUID()`. */
+    /** Makes the id of a new category. Default: a random id (works on plain http too). */
     createId?: () => string;
     /** Categories open on first render, when nothing is remembered. */
     defaultExpandedIds?: string[];
@@ -222,6 +222,19 @@ function NameField({
 }
 
 /**
+ * A random id for a new category. `crypto.randomUUID` exists only in secure
+ * contexts (https, localhost), so a page served over plain http — a dev box
+ * on the LAN — would throw on "Neue Kategorie" without the fallback.
+ */
+export function newId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+        return crypto.randomUUID();
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * A tree of categories (folders) for a sidebar: pick one to filter a list,
  * and — when `onNodesChange` is given — add, rename, delete and move them.
  * Moving works four ways: drag a category onto another (into it) or between
@@ -247,7 +260,7 @@ export function CategoryTree({
     onSelect,
     onEdit,
     counts,
-    createId = () => crypto.randomUUID(),
+    createId = newId,
     defaultExpandedIds = [],
     storageKey,
     shortcutLabels,
@@ -340,7 +353,9 @@ export function CategoryTree({
         (selectedId && lines.some((l) => l.node.id === selectedId) && selectedId) ||
         lines[0]?.node.id;
 
-    const change = (next: TreeNode[]) => onNodesChange?.(next, diffTree(nodes, next));
+    /** `moved`: the node the reader moved, which names the change when a swap could be read either way. */
+    const change = (next: TreeNode[], moved?: string) =>
+        onNodesChange?.(next, diffTree(nodes, next, moved));
 
     /** Commit a move built by one of the tree helpers; they return the same tree for a no-op. */
     const applyMove = (id: string, next: TreeNode[]) => {
@@ -350,7 +365,7 @@ export function CategoryTree({
         const after = locate(next, id)!;
         if (after.parentId !== null)
             updateExpanded((open) => pathTo(next, after.parentId!).forEach((n) => open.add(n.id)));
-        change(next);
+        change(next, id);
         if (after.parentId !== before.parentId)
             setAnnouncement(
                 labels.moved(
