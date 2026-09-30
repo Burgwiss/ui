@@ -1,0 +1,21 @@
+import type { ReactNode } from 'react';
+export interface SidebarLayoutProps {
+    /** Usually a `Sidebar`. It sits on the `side` edge. */
+    sidebar: ReactNode;
+    /** Default `'left'`. Pass the same side to the `Sidebar` so its resize handle faces the main area. */
+    side?: 'left' | 'right';
+    /** The main area. Scrolls on its own; the sidebar stays put. */
+    children: ReactNode;
+    /** Extra classes merged onto the layout's root element (it is `h-full w-full`; size its parent). */
+    className?: string;
+}
+/**
+ * The page skeleton for a sidebar next to a main area, filling the height and
+ * width of its container (give the parent a height). Nothing more: no header,
+ * no padding, no chrome, those belong to what goes inside. Pass a `Sidebar` as
+ * `sidebar` and the page content as children; the main area scrolls on its own. For
+ * a list page with a toolbar use `GridPage`; for a messaging page `ChatPage`.
+ *
+ * @summary Layout with a sidebar on one side and a scrolling main area, filling its container.
+ */
+export declare function SidebarLayout({ sidebar, side, children, className }: SidebarLayoutProps): import("react").JSX.Element;
