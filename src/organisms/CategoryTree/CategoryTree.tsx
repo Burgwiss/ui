@@ -32,6 +32,7 @@ import {
     canMove,
     descendantIds,
     findNode,
+    diffTree,
     flattenVisible,
     indentNode,
     insertNode,
@@ -42,6 +43,7 @@ import {
     pathTo,
     removeNode,
     renameNode,
+    type TreeChange,
     type TreeLine,
     type TreeNode,
 } from '../../lib/tree';
@@ -118,10 +120,12 @@ export interface CategoryTreeProps {
     /** The categories, nested. Controlled: pass the tree you keep in state. */
     nodes: TreeNode[];
     /**
-     * Called with the whole new tree after an add, rename, move or delete. Without it the
-     * tree is read-only: no + button, no menu, no dragging, no F2/Delete/Alt+arrows.
+     * Called with the whole new tree after an add, rename, move or delete, and with what
+     * that edit was (`diffTree`) — so a server can be told "rename 7" rather than be sent
+     * the whole tree. Without it the tree is read-only: no + button, no menu, no dragging,
+     * no F2/Delete/Alt+arrows.
      */
-    onNodesChange?: (nodes: TreeNode[]) => void;
+    onNodesChange?: (nodes: TreeNode[], change: TreeChange | null) => void;
     /** The selected category, or null for none (e.g. "Alle Kurse" is active). */
     selectedId: string | null;
     /** Called on click, Enter or Space — and with null when the selected category is deleted. */
@@ -336,7 +340,7 @@ export function CategoryTree({
         (selectedId && lines.some((l) => l.node.id === selectedId) && selectedId) ||
         lines[0]?.node.id;
 
-    const change = (next: TreeNode[]) => onNodesChange?.(next);
+    const change = (next: TreeNode[]) => onNodesChange?.(next, diffTree(nodes, next));
 
     /** Commit a move built by one of the tree helpers; they return the same tree for a no-op. */
     const applyMove = (id: string, next: TreeNode[]) => {

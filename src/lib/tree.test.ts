@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     canMove,
     descendantIds,
+    diffTree,
     findNode,
     flattenVisible,
     indentNode,
@@ -247,5 +248,76 @@ describe('keyboard moves', () => {
 
     it('cannot outdent a top-level node', () => {
         expect(shape(outdentNode(TREE, 'kunst'))).toBe(shape(TREE));
+    });
+});
+
+describe('diffTree', () => {
+    it('reports nothing for the same tree, or an equal copy', () => {
+        expect(diffTree(TREE, TREE)).toBeNull();
+        expect(diffTree(TREE, structuredClone(TREE))).toBeNull();
+    });
+
+    it('reports an addition with its parent and position', () => {
+        const next = insertNode(TREE, 'arabisch', { id: 'neu', label: 'Neu' }, 1);
+        expect(diffTree(TREE, next)).toEqual({
+            type: 'add',
+            id: 'neu',
+            label: 'Neu',
+            parentId: 'arabisch',
+            index: 1,
+        });
+        expect(diffTree(TREE, insertNode(TREE, null, { id: 'x', label: 'X' }))).toMatchObject({
+            parentId: null,
+            index: 3,
+        });
+    });
+
+    it('reports a rename', () => {
+        expect(diffTree(TREE, renameNode(TREE, 'regeln', 'Die Regeln'))).toEqual({
+            type: 'rename',
+            id: 'regeln',
+            label: 'Die Regeln',
+        });
+    });
+
+    it('reports only the top-most node of a removed branch', () => {
+        expect(diffTree(TREE, removeNode(TREE, 'koran'))).toEqual({ type: 'remove', id: 'koran' });
+        expect(diffTree(TREE, removeNode(TREE, 'regeln'))).toEqual({
+            type: 'remove',
+            id: 'regeln',
+        });
+    });
+
+    // Every move, replayed with moveNode, must give the same tree back — that is the contract.
+    const moves: [string, string, string | null, number][] = [
+        ['down within a parent', 'arabisch', null, 3],
+        ['up within a parent', 'kunst', null, 0],
+        ['into another parent', 'kunst', 'arabisch', 1],
+        ['to the end of another parent', 'grund', 'koran', 1],
+        ['to the top level', 'regeln', null, 1],
+        ['a branch, with everything under it', 'tajwid', 'arabisch', 0],
+        ['one step down (adjacent swap)', 'grund', 'arabisch', 2],
+    ];
+    it.each(moves)('reports a move %s that replays to the same tree', (_, id, parentId, index) => {
+        const next = moveNode(TREE, id, parentId, index);
+        const change = diffTree(TREE, next);
+        expect(change?.type).toBe('move');
+        if (change?.type !== 'move') return;
+        expect(shape(moveNode(TREE, change.id, change.parentId, change.index))).toBe(shape(next));
+    });
+
+    it('names the moved node itself when siblings only shifted around it', () => {
+        expect(diffTree(TREE, moveNode(TREE, 'arabisch', null, 3))).toEqual({
+            type: 'move',
+            id: 'arabisch',
+            parentId: null,
+            index: 3,
+        });
+        expect(diffTree(TREE, moveNode(TREE, 'kunst', 'koran', 0))).toEqual({
+            type: 'move',
+            id: 'kunst',
+            parentId: 'koran',
+            index: 0,
+        });
     });
 });

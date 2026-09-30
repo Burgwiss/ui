@@ -39,9 +39,9 @@ function setup(props: Partial<CategoryTreeProps> = {}, initial: TreeNode[] = TRE
         return (
             <CategoryTree
                 nodes={nodes}
-                onNodesChange={(next) => {
+                onNodesChange={(next, change) => {
                     state.nodes = next;
-                    onNodesChange(next);
+                    onNodesChange(next, change);
                     setNodes(next);
                 }}
                 selectedId={selected}
@@ -215,6 +215,32 @@ describe('CategoryTree — keyboard', () => {
         expect(item('Koran')).toHaveFocus();
         await user.keyboard('k');
         expect(item('Kunst')).toHaveFocus();
+    });
+});
+
+describe('CategoryTree — says what each edit was', () => {
+    it('reports an add, a rename, a move and a delete as such', async () => {
+        const { user, onNodesChange } = setup();
+        const last = () => onNodesChange.mock.lastCall?.[1];
+
+        await user.click(screen.getByRole('button', { name: 'Neue Kategorie' }));
+        await user.keyboard('Kinder{Enter}');
+        expect(last()).toEqual({
+            type: 'add',
+            id: 'neu-1',
+            label: 'Kinder',
+            parentId: null,
+            index: 3,
+        });
+
+        await user.keyboard('{F2}Jugend{Enter}');
+        expect(last()).toEqual({ type: 'rename', id: 'neu-1', label: 'Jugend' });
+
+        await user.keyboard('{Alt>}{ArrowUp}{/Alt}');
+        expect(last()).toEqual({ type: 'move', id: 'neu-1', parentId: null, index: 2 });
+
+        await user.keyboard('{Delete}');
+        expect(last()).toEqual({ type: 'remove', id: 'neu-1' });
     });
 });
 

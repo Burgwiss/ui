@@ -202,3 +202,65 @@ export function outdentNode(nodes: TreeNode[], id: string): TreeNode[] {
     const parent = locate(nodes, where.parentId)!;
     return moveNode(nodes, id, parent.parentId, parent.index + 1);
 }
+
+/**
+ * The one thing that changed between two trees, in terms a server can apply:
+ * a node added, renamed, moved or removed. A move's `index` uses the same
+ * before-the-move counting as `moveNode`, so `moveNode(prev, id, parentId,
+ * index)` gives `next` back. A removal names only the top-most removed node;
+ * everything under it went with it.
+ */
+export type TreeChange =
+    | { type: 'add'; id: string; label: string; parentId: string | null; index: number }
+    | { type: 'rename'; id: string; label: string }
+    | { type: 'move'; id: string; parentId: string | null; index: number }
+    | { type: 'remove'; id: string };
+
+function allIds(nodes: TreeNode[]): string[] {
+    return nodes.flatMap((n) => [n.id, ...(n.children ? allIds(n.children) : [])]);
+}
+
+/**
+ * What one edit did to a tree — for saving each add, rename, move or delete
+ * as it happens. Null when nothing changed. When more than one thing changed
+ * it reports the first it finds (removals, then additions, renames, moves);
+ * a `CategoryTree` edit is always exactly one.
+ */
+export function diffTree(prev: TreeNode[], next: TreeNode[]): TreeChange | null {
+    if (prev === next) return null;
+    const before = new Set(allIds(prev));
+    const after = new Set(allIds(next));
+
+    const removed = [...before].filter((id) => !after.has(id));
+    const top = removed.find((id) => {
+        const parent = locate(prev, id)!.parentId;
+        return parent === null || after.has(parent);
+    });
+    if (top !== undefined) return { type: 'remove', id: top };
+
+    for (const id of after) {
+        if (before.has(id)) continue;
+        const where = locate(next, id)!;
+        const node = where.siblings[where.index]!;
+        return { type: 'add', id, label: node.label, parentId: where.parentId, index: where.index };
+    }
+
+    for (const id of after) {
+        const was = findNode(prev, id)!;
+        const now = findNode(next, id)!;
+        if (was.label !== now.label) return { type: 'rename', id, label: now.label };
+    }
+
+    for (const id of after) {
+        const was = locate(prev, id)!;
+        const now = locate(next, id)!;
+        if (was.parentId === now.parentId && was.index === now.index) continue;
+        // A sibling that only shifted because another node moved is not the mover:
+        // the mover is the node whose own move reproduces the new order.
+        const index =
+            was.parentId === now.parentId && was.index < now.index ? now.index + 1 : now.index;
+        if (JSON.stringify(moveNode(prev, id, now.parentId, index)) === JSON.stringify(next))
+            return { type: 'move', id, parentId: now.parentId, index };
+    }
+    return null;
+}
