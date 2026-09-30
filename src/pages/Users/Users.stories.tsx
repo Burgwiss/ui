@@ -1360,7 +1360,9 @@ function UserSheet({
     const [city, setCity] = useState(user?.city ?? '');
     const [saved, setSaved] = useState({ name, email, phone, city });
     const [enrolments, setEnrolments] = useState(
-        user?.role === 'student' ? EXAMPLE_ENROLMENTS : [],
+        user?.role === 'student' && (user.status === 'active' || user.status === 'deleted')
+            ? EXAMPLE_ENROLMENTS
+            : [],
     );
     const [notes, setNotes] = useState([
         {
@@ -1466,7 +1468,7 @@ function UserSheet({
         ],
         [
             'Bezahlt',
-            user.paidOrders
+            user.paidOrders && user.status !== 'pending'
                 ? `${user.paidOrders * 105},00 € in ${user.paidOrders} Bestellungen`
                 : 'nichts',
         ],
@@ -2123,6 +2125,7 @@ export const NutzerEntfernt: StoryObj<typeof UsersPage> = {
         const body = within(canvasElement.ownerDocument.body);
         const panel = await body.findByRole('dialog');
         await expect(within(panel).getByRole('status')).toHaveTextContent(/Entfernt/);
+        const name = within(panel).getByRole('heading', { level: 2 }).textContent ?? '';
         await userEvent.click(
             within(panel).getAllByRole('button', { name: /Endgültig löschen/ })[0]!,
         );
@@ -2130,10 +2133,7 @@ export const NutzerEntfernt: StoryObj<typeof UsersPage> = {
         const confirm = dialogs.at(-1)!;
         const erase = within(confirm).getByRole('button', { name: 'Endgültig löschen' });
         await expect(erase).toBeDisabled();
-        await userEvent.type(
-            within(confirm).getByRole('textbox'),
-            within(panel).getByRole('heading', { level: 2 }).textContent ?? '',
-        );
+        await userEvent.type(within(confirm).getByRole('textbox'), name);
         await expect(erase).toBeEnabled();
         await userEvent.click(within(confirm).getByRole('button', { name: 'Abbrechen' }));
     },
