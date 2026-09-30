@@ -11,7 +11,8 @@ import {
     EllipsisVertical,
     House,
     Link2,
-    List,
+    LayoutGrid,
+    Table2,
     Loader,
     Palette,
     Pencil,
@@ -29,7 +30,6 @@ import {
     VideoOff,
     XCircle,
     CopyPlus,
-    FolderInput,
     Eye,
     EyeOff,
     History,
@@ -96,6 +96,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '../../organisms/Sidebar';
+import { VideoPlayer } from '../../organisms/VideoPlayer';
+import { VIDEO_LABELS } from '../../organisms/VideoPlayer/VideoPlayer.fixtures';
 import { AdminLayout } from '../../templates/AdminLayout';
 import { GridPage } from '../../templates/GridPage';
 
@@ -918,7 +920,7 @@ function SessionsView({
             {(
                 [
                     ['week', CalendarRange, 'Woche'],
-                    ['list', List, 'Liste'],
+                    ['list', Table2, 'Tabelle'],
                 ] as const
             ).map(([value, Icon, label]) => (
                 <button
@@ -1669,135 +1671,385 @@ const RECORDINGS: Recording[] = [
     },
 ];
 
-function RecordingsView({ scope }: { scope: 'all' | 'processing' | 'failed' }) {
-    const [items, setItems] = useState(RECORDINGS);
-    const [remove, setRemove] = useState<Recording | null>(null);
-    const [share, setShare] = useState<Recording | null>(null);
-    const shown = items.filter((r) => scope === 'all' || r.state === scope);
-    const set = (r: Recording) => setItems((all) => all.map((x) => (x.id === r.id ? r : x)));
+const STATE_BADGE = {
+    completed: null,
+    processing: { label: 'Wird verarbeitet', tone: 'warning' as const },
+    failed: { label: 'Fehlgeschlagen', tone: 'destructive' as const },
+};
+
+/** How a recording shows up: its state, or once ready whether the course sees it. */
+function RecordingBadges({ r }: { r: Recording }) {
+    const state = STATE_BADGE[r.state];
     return (
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-8 py-8">
-            <header className="flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Aufnahmen</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Aus den Sitzungen und hochgeladen. Veröffentlicht heißt: sichtbar im Kurs.
-                    </p>
-                </div>
-                <Button>
-                    <Plus aria-hidden="true" /> Video hochladen
-                </Button>
-            </header>
-            <div className="grid grid-cols-3 gap-5">
-                {shown.map((r) => (
-                    <article
-                        key={r.id}
-                        className="flex flex-col overflow-hidden rounded-xl border border-border"
+        <span className="flex flex-wrap gap-1.5">
+            {state ? (
+                <Badge tone={state.tone} dot>
+                    {state.label}
+                </Badge>
+            ) : (
+                <Badge tone={r.published ? 'success' : 'faint'} dot>
+                    {r.published ? 'Im Kurs sichtbar' : 'Zurückgehalten'}
+                </Badge>
+            )}
+            {r.shared && <Badge tone="neutral">Link geteilt</Badge>}
+        </span>
+    );
+}
+
+function RecordingsView({
+    scope,
+    openRecording = null,
+}: {
+    scope: 'all' | 'processing' | 'failed';
+    openRecording?: number | null;
+}) {
+    const [items, setItems] = useState(RECORDINGS);
+    const [layout, setLayout] = useState<'tiles' | 'table'>('tiles');
+    const [search, setSearch] = useState('');
+    const [open, setOpen] = useState<number | null>(openRecording);
+    const [remove, setRemove] = useState<Recording | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    const gridRef = useRef<GridApi<Recording> | null>(null);
+    const shown = items
+        .filter((r) => scope === 'all' || r.state === scope)
+        .filter((r) => `${r.title} ${r.course}`.toLowerCase().includes(search.toLowerCase()));
+    const set = (r: Recording) => setItems((all) => all.map((x) => (x.id === r.id ? r : x)));
+    const byIds = (ids: RowId[]) => items.filter((r) => ids.includes(r.id));
+
+    const columns: GridColumn<Recording>[] = useMemo(
+        () => [
+            {
+                id: 'title',
+                header: 'Aufnahme',
+                pinned: 'left',
+                hideable: false,
+                width: 300,
+                filter: { type: 'text' },
+                cell: (r) => (
+                    <a
+                        href={`#/admin/recordings/${r.id}`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setOpen(r.id);
+                        }}
+                        className="flex min-w-0 flex-col underline-offset-4 hover:underline"
                     >
-                        <div className="relative flex aspect-video items-center justify-center bg-video-surface">
-                            {r.state === 'completed' ? (
-                                <Clapperboard
-                                    className="size-8 text-video-foreground"
-                                    aria-hidden="true"
-                                />
-                            ) : r.state === 'processing' ? (
-                                <Loader
-                                    className="size-8 animate-spin text-video-foreground motion-reduce:animate-none"
-                                    aria-hidden="true"
-                                />
-                            ) : (
-                                <VideoOff
-                                    className="size-8 text-video-foreground"
-                                    aria-hidden="true"
-                                />
-                            )}
-                            {r.seconds && (
-                                <span className="absolute end-2 bottom-2 rounded bg-video-scrim px-1.5 py-0.5 text-xs text-video-foreground tabular-nums">
-                                    {mins(r.seconds)}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-4">
-                            <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                    <h2 className="truncate text-sm font-medium">{r.title}</h2>
-                                    <p className="truncate text-xs text-muted-foreground">
-                                        {r.course} · {r.date} ·{' '}
-                                        {r.source === 'live' ? 'Live' : 'Hochgeladen'}
-                                    </p>
-                                </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <IconButton
-                                            label={`Aktionen für ${r.title}`}
-                                            icon={<EllipsisVertical aria-hidden="true" />}
+                        <span className="truncate font-medium text-foreground">{r.title}</span>
+                        <span className="truncate text-xs text-muted-foreground">{r.course}</span>
+                    </a>
+                ),
+            },
+            { id: 'date', header: 'Aufgenommen', width: 150 },
+            {
+                id: 'seconds',
+                header: 'Länge',
+                align: 'right',
+                width: 110,
+                cell: (r) => (r.seconds ? mins(r.seconds) : '—'),
+            },
+            {
+                id: 'state',
+                header: 'Stand',
+                width: 230,
+                groupable: true,
+                cell: (r) => <RecordingBadges r={r} />,
+                exportValue: (r) =>
+                    r.state === 'completed'
+                        ? r.published
+                            ? 'Im Kurs sichtbar'
+                            : 'Zurückgehalten'
+                        : STATE_BADGE[r.state]!.label,
+                filter: {
+                    type: 'choice',
+                    options: [
+                        { value: 'completed', label: 'Fertig' },
+                        { value: 'processing', label: 'Wird verarbeitet' },
+                        { value: 'failed', label: 'Fehlgeschlagen' },
+                    ],
+                },
+            },
+            {
+                id: 'source',
+                header: 'Quelle',
+                width: 130,
+                groupable: true,
+                cell: (r) => (r.source === 'live' ? 'Live' : 'Hochgeladen'),
+            },
+            { id: 'size', header: 'Größe', align: 'right', width: 110 },
+            { id: 'course', header: 'Kurs', width: 220, groupable: true },
+        ],
+        [],
+    );
+    const actions: GridActionItem[] = [
+        {
+            id: 'upload',
+            label: 'Video hochladen',
+            icon: <Plus aria-hidden="true" />,
+            tone: 'primary',
+            shortcut: 'N',
+            onSelect: () => setNotice('Hochladen: öffnet die Dateiauswahl'),
+        },
+        {
+            id: 'open',
+            label: 'Öffnen',
+            icon: <Eye aria-hidden="true" />,
+            when: ['one'],
+            group: 'open',
+            isDefault: true,
+            shortcut: 'E',
+            onSelect: (ids) => setOpen(Number(ids[0])),
+        },
+        {
+            id: 'publish',
+            label: 'Im Kurs veröffentlichen',
+            icon: <Eye aria-hidden="true" />,
+            when: ['one', 'many'],
+            group: 'state',
+            disabled: (ids) => !byIds(ids).some((r) => r.state === 'completed' && !r.published),
+            disabledReason: 'Nur fertige, zurückgehaltene Aufnahmen',
+            onSelect: (ids) => {
+                byIds(ids)
+                    .filter((r) => r.state === 'completed')
+                    .forEach((r) => set({ ...r, published: true }));
+                setNotice('Im Kurs veröffentlicht');
+            },
+        },
+        {
+            id: 'hold',
+            label: 'Zurückhalten',
+            icon: <EyeOff aria-hidden="true" />,
+            when: ['one', 'many'],
+            group: 'state',
+            disabled: (ids) => !byIds(ids).some((r) => r.published),
+            disabledReason: 'Nur veröffentlichte Aufnahmen',
+            onSelect: (ids) => {
+                byIds(ids).forEach((r) => set({ ...r, published: false }));
+                setNotice('Zurückgehalten');
+            },
+        },
+        {
+            id: 'reprocess',
+            label: 'Neu verarbeiten',
+            icon: <RefreshCw aria-hidden="true" />,
+            when: ['one', 'many'],
+            group: 'state',
+            disabled: (ids) => !byIds(ids).some((r) => r.state !== 'processing'),
+            disabledReason: 'Wird gerade verarbeitet',
+            onSelect: (ids) => byIds(ids).forEach((r) => set({ ...r, state: 'processing' })),
+        },
+        {
+            id: 'delete',
+            label: 'Löschen …',
+            icon: <Trash2 aria-hidden="true" />,
+            when: ['one'],
+            group: 'danger',
+            tone: 'destructive',
+            shortcut: 'Delete',
+            onSelect: (ids) => setRemove(byIds(ids)[0] ?? null),
+        },
+    ];
+    const grid = useGrid<Recording>({
+        id: 'storybook.page.live.recordings',
+        rows: shown,
+        getRowId: (r) => r.id,
+        columns,
+        selection: 'multiple',
+        actions,
+        defaults: { hiddenColumns: ['course'] },
+    });
+    useEffect(() => {
+        gridRef.current = grid;
+    });
+
+    const toggle = (
+        <div
+            role="radiogroup"
+            aria-label="Darstellung"
+            className="flex rounded-lg border border-border p-0.5"
+        >
+            {(
+                [
+                    ['tiles', LayoutGrid, 'Kacheln'],
+                    ['table', Table2, 'Tabelle'],
+                ] as const
+            ).map(([value, Icon, label]) => (
+                <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={layout === value}
+                    onClick={() => setLayout(value)}
+                    className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm',
+                        layout === value
+                            ? 'bg-muted font-medium'
+                            : 'text-muted-foreground hover:text-foreground',
+                    )}
+                >
+                    <Icon className="size-4" aria-hidden="true" />
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+
+    const recording = items.find((r) => r.id === open) ?? null;
+    return (
+        <>
+            <GridPage
+                title="Aufnahmen"
+                offsetTop="0px"
+                grid={grid}
+                search={{ value: search, onChange: setSearch, placeholder: 'Titel oder Kurs …' }}
+                moreActionsLabel="Weitere Aktionen"
+                selectionLabels={{ count: (n) => `${n} ausgewählt`, clear: 'Auswahl aufheben' }}
+                shortcutLabels={{ Mod: 'Strg', Shift: 'Umschalt', Delete: 'Entf' }}
+                options={
+                    <div className="flex items-center gap-2">
+                        {toggle}
+                        <GridOptions
+                            preferences={grid.preferences}
+                            canSelect={grid.allowedMode !== 'none'}
+                            columns={columns.map((c) => ({
+                                id: c.id,
+                                label: c.header,
+                                hideable: c.hideable,
+                            }))}
+                            views={{
+                                views: grid.views,
+                                activeViewId: grid.activeViewId,
+                                isModified: grid.isViewModified,
+                                onApply: grid.applyView,
+                                onSave: (name) => void grid.saveView(name),
+                                onUpdate: grid.updateView,
+                                onRename: grid.renameView,
+                                onDelete: grid.deleteView,
+                                labels: VIEWS_LABELS,
+                            }}
+                            labels={OPTIONS_LABELS}
+                        />
+                    </div>
+                }
+                chips={
+                    grid.filters.length ? (
+                        <GridFilterChips
+                            filters={grid.filters}
+                            columns={columns}
+                            onRemove={grid.removeFilter}
+                            onClearAll={grid.clearFilters}
+                            labels={FILTER_CHIPS_LABELS}
+                            formatDate={(d) => d}
+                            formatNumber={(n) => String(n)}
+                        />
+                    ) : undefined
+                }
+                notice={
+                    notice ? (
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                            <CircleAlert className="size-3.5" aria-hidden="true" />
+                            {notice}
+                        </span>
+                    ) : (
+                        <span className="text-muted-foreground">
+                            Veröffentlicht heißt: sichtbar im Kurs. Neue Aufnahmen werden nachts
+                            verarbeitet.
+                        </span>
+                    )
+                }
+                footer={
+                    <GridFooter
+                        summary={`${shown.length} Aufnahmen`}
+                        onPrev={null}
+                        onNext={null}
+                        labels={{ previous: 'Zurück', next: 'Weiter', pager: 'Seiten' }}
+                    />
+                }
+            >
+                {layout === 'table' ? (
+                    <DataGrid
+                        grid={grid}
+                        labels={{
+                            ...DATA_GRID_LABELS,
+                            table: 'Aufnahmen',
+                            empty: 'Keine Aufnahme passt dazu.',
+                        }}
+                        rowLabel={(r) => r.title}
+                        renderFilter={(col, close) => (
+                            <GridFilterEditor
+                                key={col.id}
+                                columnId={col.id}
+                                header={col.header}
+                                def={col.filter!}
+                                value={grid.filters.find((f) => f.id === col.id)}
+                                onApply={(f) => {
+                                    if (f) grid.setFilter(f);
+                                    else grid.removeFilter(col.id);
+                                    close();
+                                }}
+                                labels={FILTER_EDITOR_LABELS}
+                            />
+                        )}
+                    />
+                ) : (
+                    <div className="grid grid-cols-3 gap-5 p-6">
+                        {shown.map((r) => (
+                            <button
+                                key={r.id}
+                                type="button"
+                                onClick={() => setOpen(r.id)}
+                                className="flex flex-col overflow-hidden rounded-xl border border-border text-start transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            >
+                                <span className="relative flex aspect-video w-full items-center justify-center bg-video-surface">
+                                    {r.state === 'completed' ? (
+                                        <Clapperboard
+                                            className="size-8 text-video-foreground"
+                                            aria-hidden="true"
                                         />
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            disabled={r.state !== 'completed'}
-                                            onSelect={() => set({ ...r, published: !r.published })}
-                                        >
-                                            {r.published ? (
-                                                <EyeOff aria-hidden="true" />
-                                            ) : (
-                                                <Eye aria-hidden="true" />
-                                            )}
-                                            {r.published
-                                                ? 'Zurückhalten'
-                                                : 'Im Kurs veröffentlichen'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            disabled={r.state !== 'completed'}
-                                            onSelect={() => setShare(r)}
-                                        >
-                                            <Share2 aria-hidden="true" /> Freigabelink …
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem>
-                                            <FolderInput aria-hidden="true" /> In anderen Kurs
-                                            verschieben …
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem disabled={r.state !== 'completed'}>
-                                            <Download aria-hidden="true" /> Herunterladen ({r.size})
-                                        </DropdownMenuItem>
-                                        {r.state !== 'processing' && (
-                                            <DropdownMenuItem
-                                                onSelect={() => set({ ...r, state: 'processing' })}
-                                            >
-                                                <RefreshCw aria-hidden="true" /> Neu verarbeiten
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            className="text-destructive-tint-foreground"
-                                            onSelect={() => setRemove(r)}
-                                        >
-                                            <Trash2 aria-hidden="true" /> Löschen …
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <div className="mt-auto flex flex-wrap gap-1.5">
-                                {r.state === 'completed' ? (
-                                    <Badge tone={r.published ? 'success' : 'faint'} dot>
-                                        {r.published ? 'Im Kurs sichtbar' : 'Zurückgehalten'}
-                                    </Badge>
-                                ) : (
-                                    <Badge
-                                        tone={r.state === 'failed' ? 'destructive' : 'warning'}
-                                        dot
-                                    >
-                                        {r.state === 'failed'
-                                            ? 'Fehlgeschlagen'
-                                            : 'Wird verarbeitet'}
-                                    </Badge>
-                                )}
-                                {r.shared && <Badge tone="neutral">Link geteilt</Badge>}
-                            </div>
-                        </div>
-                    </article>
-                ))}
-            </div>
+                                    ) : r.state === 'processing' ? (
+                                        <Loader
+                                            className="size-8 animate-spin text-video-foreground motion-reduce:animate-none"
+                                            aria-hidden="true"
+                                        />
+                                    ) : (
+                                        <VideoOff
+                                            className="size-8 text-video-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                    {r.seconds && (
+                                        <span className="absolute end-2 bottom-2 rounded bg-video-scrim px-1.5 py-0.5 text-xs text-video-foreground tabular-nums">
+                                            {mins(r.seconds)}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="flex flex-1 flex-col gap-2 p-4">
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-sm font-medium">
+                                            {r.title}
+                                        </span>
+                                        <span className="block truncate text-xs text-muted-foreground">
+                                            {r.course} · {r.date} ·{' '}
+                                            {r.source === 'live' ? 'Live' : 'Hochgeladen'}
+                                        </span>
+                                    </span>
+                                    <span className="mt-auto">
+                                        <RecordingBadges r={r} />
+                                    </span>
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </GridPage>
+            {recording && (
+                <RecordingSheet
+                    key={recording.id}
+                    recording={recording}
+                    onClose={() => setOpen(null)}
+                    onChange={set}
+                    onDelete={() => setRemove(recording)}
+                />
+            )}
             <ConfirmActionDialog
                 open={remove !== null}
                 onOpenChange={(o) => !o && setRemove(null)}
@@ -1809,37 +2061,280 @@ function RecordingsView({ scope }: { scope: 'all' | 'processing' | 'failed' }) {
                 onConfirm={() => {
                     setItems((all) => all.filter((x) => x.id !== remove?.id));
                     setRemove(null);
+                    setOpen(null);
                 }}
             />
-            <Dialog open={share !== null} onOpenChange={(o) => !o && setShare(null)}>
-                <DialogContent closeLabel="Schließen">
-                    <DialogHeader>
-                        <DialogTitle>Freigabelink</DialogTitle>
-                        <DialogDescription>
-                            Wer den Link hat, sieht das Video — auch ohne Konto. Nur für Aufnahmen
-                            ohne Lernende im Bild.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-2">
-                        <Label htmlFor="share-expires">Gültig bis</Label>
-                        <Input id="share-expires" type="date" defaultValue="2026-12-31" />
+        </>
+    );
+}
+
+/**
+ * One recording in a wide panel, to watch and to decide about: the player,
+ * whether the course sees it, a share link with an end date, which course it
+ * belongs to, and the file itself.
+ */
+function RecordingSheet({
+    recording,
+    onClose,
+    onChange,
+    onDelete,
+}: {
+    recording: Recording;
+    onClose: () => void;
+    onChange: (r: Recording) => void;
+    onDelete: () => void;
+}) {
+    const id = useId();
+    const r = recording;
+    const [note, setNote] = useState<string | null>(null);
+    const [expires, setExpires] = useState('2026-12-31');
+    const ready = r.state === 'completed';
+    return (
+        <Sheet open onOpenChange={(o) => !o && onClose()}>
+            <SheetContent
+                side="right"
+                closeLabel="Schließen"
+                className="w-[min(56rem,92vw)] max-w-none gap-0 p-0"
+                onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                    (e.currentTarget as HTMLElement)
+                        .querySelector<HTMLElement>('[data-sheet-title]')
+                        ?.focus();
+                }}
+            >
+                <div className="flex flex-col gap-4 px-8 pt-8 pb-6">
+                    <div className="flex items-start gap-4 pe-8">
+                        <div className="min-w-0 flex-1">
+                            <SheetTitle
+                                data-sheet-title
+                                tabIndex={-1}
+                                className="text-2xl tracking-tight outline-none"
+                            >
+                                {r.title}
+                            </SheetTitle>
+                            <SheetDescription>
+                                {r.course} · {r.date}
+                                {r.seconds ? ` · ${mins(r.seconds)}` : ''} ·{' '}
+                                {r.source === 'live' ? 'aus der Live-Sitzung' : 'hochgeladen'}
+                            </SheetDescription>
+                            <div className="mt-2">
+                                <RecordingBadges r={r} />
+                            </div>
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <IconButton
+                                    label="Weitere Aktionen"
+                                    icon={<EllipsisVertical aria-hidden="true" />}
+                                />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                    disabled={!ready}
+                                    onSelect={() => setNote(`Heruntergeladen (${r.size})`)}
+                                >
+                                    <Download aria-hidden="true" /> Herunterladen ({r.size})
+                                </DropdownMenuItem>
+                                {r.state !== 'processing' && (
+                                    <DropdownMenuItem
+                                        onSelect={() => onChange({ ...r, state: 'processing' })}
+                                    >
+                                        <RefreshCw aria-hidden="true" /> Neu verarbeiten
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-destructive-tint-foreground"
+                                    onSelect={onDelete}
+                                >
+                                    <Trash2 aria-hidden="true" /> Löschen …
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShare(null)}>
-                            Abbrechen
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (share) set({ ...share, shared: true });
-                                setShare(null);
-                            }}
+
+                    {ready ? (
+                        <VideoPlayer
+                            src="media/sample-lesson.mp4"
+                            title={r.title}
+                            labels={VIDEO_LABELS}
+                            className="overflow-hidden rounded-lg"
+                        />
+                    ) : (
+                        <div
+                            role="status"
+                            className={cn(
+                                'flex aspect-video flex-col items-center justify-center gap-3 rounded-lg bg-video-surface px-6 text-center text-video-foreground',
+                            )}
                         >
-                            <Link2 aria-hidden="true" /> Link erstellen
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
+                            {r.state === 'processing' ? (
+                                <>
+                                    <Loader
+                                        className="size-8 animate-spin motion-reduce:animate-none"
+                                        aria-hidden="true"
+                                    />
+                                    <p className="text-sm">
+                                        Wird verarbeitet — heute Nacht um 02:00 ist die Aufnahme
+                                        fertig.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <VideoOff className="size-8" aria-hidden="true" />
+                                    <p className="max-w-md text-sm">
+                                        Die Verarbeitung ist fehlgeschlagen. Die Rohdaten liegen
+                                        noch vor.
+                                    </p>
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => onChange({ ...r, state: 'processing' })}
+                                    >
+                                        <RefreshCw aria-hidden="true" /> Neu verarbeiten
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    )}
+                    {note && (
+                        <p role="status" className="text-sm text-muted-foreground">
+                            {note}
+                        </p>
+                    )}
+                </div>
+
+                <div className="px-8 pb-8">
+                    <Part
+                        title="Im Kurs"
+                        text={`Sichtbar für alle in „${r.course}", unter den Lektionen.`}
+                    >
+                        <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
+                            <div className="text-sm">
+                                <div className="font-medium">
+                                    {r.published ? 'Veröffentlicht' : 'Zurückgehalten'}
+                                </div>
+                                <div className="text-muted-foreground">
+                                    {r.published
+                                        ? 'Die Lernenden sehen die Aufnahme.'
+                                        : 'Nur Lehrkräfte und Admins sehen sie.'}
+                                </div>
+                            </div>
+                            <Switch
+                                checked={r.published}
+                                disabled={!ready}
+                                onCheckedChange={(v) => onChange({ ...r, published: v })}
+                                aria-label="Im Kurs veröffentlichen"
+                            />
+                        </div>
+                    </Part>
+
+                    <Part
+                        title="Freigabelink"
+                        text="Für Menschen ohne Konto. Nur für Aufnahmen, auf denen keine Lernenden zu sehen sind."
+                    >
+                        {r.shared ? (
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                    <Input
+                                        readOnly
+                                        value={`https://akademie.example.de/r/${(r.id * 104729).toString(36)}`}
+                                        aria-label="Freigabelink"
+                                        className="font-mono text-xs"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setNote('Link kopiert')}
+                                    >
+                                        <Copy aria-hidden="true" /> Kopieren
+                                    </Button>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Gültig bis 31.12.2026.
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setNote(
+                                                'Neuer Link erstellt — der alte gilt nicht mehr',
+                                            )
+                                        }
+                                    >
+                                        <RefreshCw aria-hidden="true" /> Neuen Link erstellen
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => onChange({ ...r, shared: false })}
+                                    >
+                                        <XCircle aria-hidden="true" /> Link zurückziehen
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-end gap-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor={`${id}-expires`}>Gültig bis</Label>
+                                    <Input
+                                        id={`${id}-expires`}
+                                        type="date"
+                                        value={expires}
+                                        onChange={(e) => setExpires(e.target.value)}
+                                        className="w-44"
+                                    />
+                                </div>
+                                <Button
+                                    disabled={!ready}
+                                    onClick={() => onChange({ ...r, shared: true })}
+                                >
+                                    <Share2 aria-hidden="true" /> Link erstellen
+                                </Button>
+                            </div>
+                        )}
+                    </Part>
+
+                    <Part title="Kurs" text="Zu welchem Kurs die Aufnahme gehört.">
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor={`${id}-course`} className="sr-only">
+                                Kurs
+                            </Label>
+                            <Select
+                                value={r.course}
+                                onValueChange={(course) => onChange({ ...r, course })}
+                            >
+                                <SelectTrigger id={`${id}-course`} className="w-80">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {COURSES.map((c) => (
+                                        <SelectItem key={c} value={c}>
+                                            {c}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </Part>
+
+                    <Part title="Datei">
+                        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            {[
+                                ['Quelle', r.source === 'live' ? 'Live-Sitzung' : 'Hochgeladen'],
+                                ['Aufgenommen', r.date],
+                                ['Länge', r.seconds ? mins(r.seconds) : '—'],
+                                ['Größe', r.size],
+                            ].map(([k, v]) => (
+                                <div key={k} className="flex justify-between gap-4">
+                                    <dt className="text-muted-foreground">{k}</dt>
+                                    <dd>{v}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </Part>
+                </div>
+            </SheetContent>
+        </Sheet>
     );
 }
 
@@ -1961,9 +2456,11 @@ function SettingsView() {
 function LivePage({
     initialView = { kind: 'sessions', scope: 'all' },
     openSession = null,
+    openRecording = null,
 }: {
     initialView?: View;
     openSession?: number | null;
+    openRecording?: number | null;
 }) {
     const [sessions, setSessions] = useState(SESSIONS);
     const [view, setView] = useState<View>(initialView);
@@ -2015,7 +2512,9 @@ function LivePage({
                     onOpen={setOpen}
                 />
             )}
-            {view.kind === 'recordings' && <RecordingsView key={view.scope} scope={view.scope} />}
+            {view.kind === 'recordings' && (
+                <RecordingsView key={view.scope} scope={view.scope} openRecording={openRecording} />
+            )}
             {view.kind === 'settings' && <SettingsView />}
         </AdminLayout>
     );
@@ -2066,6 +2565,31 @@ export const NeueSitzung: StoryObj<typeof LivePage> = {
 
 export const Aufnahmen: StoryObj<typeof LivePage> = {
     render: () => <LivePage initialView={{ kind: 'recordings', scope: 'all' }} />,
+};
+
+/** A recording opened to watch: the player, whether the course sees it, a share link, its course. */
+export const AufnahmeAnsehen: StoryObj<typeof LivePage> = {
+    render: () => <LivePage initialView={{ kind: 'recordings', scope: 'all' }} openRecording={4} />,
+};
+
+/** Recordings as a table, to sort, filter and act on several at once. */
+export const AufnahmenAlsTabelle: StoryObj<typeof LivePage> = {
+    render: () => <LivePage initialView={{ kind: 'recordings', scope: 'all' }} />,
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await userEvent.click(canvas.getByRole('radio', { name: 'Tabelle' }));
+        await expect(canvas.getByRole('table')).toBeInTheDocument();
+    },
+};
+
+/** Sessions as a table instead of the week. */
+export const SitzungenAlsTabelle: StoryObj<typeof LivePage> = {
+    render: () => <LivePage />,
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement);
+        await userEvent.click(canvas.getByRole('radio', { name: 'Tabelle' }));
+        await expect(canvas.getByRole('table')).toBeInTheDocument();
+    },
 };
 
 export const Einstellungen: StoryObj<typeof LivePage> = {
