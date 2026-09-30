@@ -1,4 +1,11 @@
-import type { ComponentType, ElementType, ReactNode } from 'react';
+import {
+    forwardRef,
+    type ComponentPropsWithoutRef,
+    type ComponentType,
+    type ElementType,
+    type ReactNode,
+    type Ref,
+} from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../atoms/Tooltip';
 import { cn } from '../../lib/cn';
@@ -53,12 +60,17 @@ export function AppRailSpacer() {
     return <div aria-hidden="true" className="flex-1" />;
 }
 
-export interface AppRailItemProps {
+export interface AppRailItemProps
+    extends Omit<ComponentPropsWithoutRef<'button'>, 'children' | 'onClick' | 'type'> {
     /** Icon component (e.g. a lucide icon); it is rendered decorative (`aria-hidden`), the `label` names the item. */
     icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' }>;
     /** Shown under the icon and in the tooltip. Short: the rail is 68px wide. */
     label: string;
-    /** The current app. A link gets `aria-current="page"`, a button `aria-pressed`. */
+    /**
+     * The current app. A link gets `aria-current="page"`, a button `aria-pressed`.
+     * Leave it out for a button that opens something (e.g. an account menu as a
+     * `DropdownMenuTrigger asChild`): then it is a plain button, not a toggle.
+     */
     active?: boolean;
     /** Renders a link. Pass `as` for a router link (e.g. Inertia's `Link`). */
     href?: string;
@@ -71,19 +83,17 @@ export interface AppRailItemProps {
 /**
  * One app on the rail: icon over a short word, with the label repeated as a
  * tooltip on the right. A link when it navigates, a button when it only
- * switches the menu beside the rail.
+ * switches the menu beside the rail. It forwards its ref and extra props to
+ * the control, so it can be a menu trigger (`DropdownMenuTrigger asChild`).
  */
-export function AppRailItem({
-    icon: Icon,
-    label,
-    active = false,
-    href,
-    as,
-    onClick,
-}: AppRailItemProps) {
+export const AppRailItem = forwardRef<HTMLElement, AppRailItemProps>(function AppRailItem(
+    { icon: Icon, label, active, href, as, onClick, className: extra, ...rest },
+    ref,
+) {
     const className = cn(
         'flex w-full flex-col items-center gap-1 rounded-lg py-2 text-[10.5px] leading-none font-medium transition-colors outline-none',
         'focus-visible:ring-2 focus-visible:ring-rail-foreground',
+        extra,
         active
             ? 'bg-rail-accent text-rail-foreground'
             : 'text-rail-muted-foreground hover:bg-rail-accent hover:text-rail-foreground',
@@ -98,6 +108,8 @@ export function AppRailItem({
     const control =
         href !== undefined ? (
             <Link
+                {...rest}
+                ref={ref}
                 href={href}
                 onClick={onClick}
                 aria-current={active ? 'page' : undefined}
@@ -106,7 +118,14 @@ export function AppRailItem({
                 {content}
             </Link>
         ) : (
-            <button type="button" onClick={onClick} aria-pressed={active} className={className}>
+            <button
+                {...rest}
+                ref={ref as Ref<HTMLButtonElement>}
+                type="button"
+                onClick={onClick}
+                aria-pressed={active}
+                className={className}
+            >
                 {content}
             </button>
         );
@@ -116,4 +135,4 @@ export function AppRailItem({
             <TooltipContent side="right">{label}</TooltipContent>
         </Tooltip>
     );
-}
+});

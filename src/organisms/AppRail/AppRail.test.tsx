@@ -4,6 +4,12 @@ import { BookOpen, House } from 'lucide-react';
 import { forwardRef, type ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '../../molecules/DropdownMenu';
 import { AppRail, AppRailItem, AppRailSpacer } from './AppRail';
 
 describe('AppRail', () => {
@@ -31,7 +37,7 @@ describe('AppRail', () => {
         const onClick = vi.fn();
         render(
             <AppRail label="Apps">
-                <AppRailItem icon={BookOpen} label="Kurse" onClick={onClick} />
+                <AppRailItem icon={BookOpen} label="Kurse" active={false} onClick={onClick} />
                 <AppRailItem icon={House} label="Nutzer" active onClick={() => {}} />
             </AppRail>,
         );
@@ -84,5 +90,35 @@ describe('AppRail', () => {
         );
         expect(screen.getByRole('link', { name: 'Logo' })).toBeInTheDocument();
         expect(container.querySelector('.flex-1[aria-hidden="true"]')).not.toBeNull();
+    });
+
+    it('is a plain button, not a toggle, when active is left out', () => {
+        render(
+            <AppRail label="Apps">
+                <AppRailItem icon={BookOpen} label="Konto" onClick={() => {}} />
+            </AppRail>,
+        );
+        expect(screen.getByRole('button', { name: 'Konto' })).not.toHaveAttribute('aria-pressed');
+    });
+
+    it('works as a menu trigger: ref and props reach the button', async () => {
+        const user = userEvent.setup();
+        render(
+            <AppRail label="Apps">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <AppRailItem icon={House} label="Konto" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right">
+                        <DropdownMenuItem>Abmelden</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </AppRail>,
+        );
+        const trigger = screen.getByRole('button', { name: 'Konto' });
+        expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+        await user.click(trigger);
+        expect(await screen.findByRole('menuitem', { name: 'Abmelden' })).toBeInTheDocument();
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
     });
 });
