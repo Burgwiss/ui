@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "burgwiss-ui-storybook": {
+            "type": "http",
+            "url": "${STORYBOOK_MCP_URL:-http://localhost:6006/mcp}"
+        }
+    }
+}

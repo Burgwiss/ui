@@ -1,3 +1,19 @@
 @import 'tailwindcss';
+/* The brand fonts the Burgwiss presets name (Storybook only; an app loads its own). */
+@import '@fontsource/public-sans/latin-400.css';
+@import '@fontsource/public-sans/latin-500.css';
+@import '@fontsource/public-sans/latin-600.css';
+@import '@fontsource/public-sans/latin-700.css';
+@import '@fontsource/source-serif-4/latin-400.css';
+@import '@fontsource/source-serif-4/latin-500.css';
+@import '@fontsource/source-serif-4/latin-600.css';
+@import '@fontsource/source-serif-4/latin-700.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
 @import '../src/styles.css';
 @source '../src';
+
+/* Storybook styles the preview <body> with its own UI font (unlayered, so it
+   beats the theme's layered base rule). Stories must show the theme's font. */
+html body {
+    font-family: var(--font-sans);
+}

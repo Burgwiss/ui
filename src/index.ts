@@ -1,23 +1,81 @@
 // @burgwiss/ui — public API. Ordered by atomic level.
 export { cn } from './lib/cn';
+export {
+    formatFileSize,
+    MESSAGE_ATTACHMENT_MAX_MB,
+    MESSAGE_ATTACHMENT_MIMES,
+    MESSAGE_MAX_ATTACHMENTS,
+} from './lib/messageAttachments';
 
-// Atoms — the smallest pieces; no other component inside.
+// Hooks — behaviour without looks (grid selection, keyboard, remembered settings).
+export * from './hooks';
+
+// Atoms — one control you use as a whole. An atom may lean on another atom
+// (Button shows a Tooltip), never on a higher level.
+export * from './atoms/Avatar';
+export * from './atoms/Badge';
 export * from './atoms/Button';
+export * from './atoms/Checkbox';
+export * from './atoms/Chip';
+export * from './atoms/CopyLinkButton';
+export * from './atoms/IconButton';
+export * from './atoms/IconToggle';
+export * from './atoms/InitialsAvatar';
 export * from './atoms/Input';
+export * from './atoms/IntegerInput';
 export * from './atoms/Label';
+export * from './atoms/PasswordInput';
+export * from './atoms/RadioGroup';
 export * from './atoms/Separator';
+export * from './atoms/Switch';
+export * from './atoms/Textarea';
+export * from './atoms/Tooltip';
 
-// Molecules — a few atoms working as one control.
-export * from './molecules/IconButton';
+// Molecules — a small widget: a few atoms that work together.
+export * from './molecules/Alert';
+export * from './molecules/AlertDialog';
+export * from './molecules/AttachmentDropzone';
+export * from './molecules/AttachmentList';
+export * from './molecules/Breadcrumb';
+export * from './molecules/Card';
+export * from './molecules/Collapsible';
+export * from './molecules/ColorPicker';
+export * from './molecules/Combobox';
+export * from './molecules/Command';
+export * from './molecules/ComposerAttachments';
+export * from './molecules/ConfirmActionDialog';
+export * from './molecules/ContextMenu';
+export * from './molecules/Dialog';
+export * from './molecules/DropdownMenu';
+export * from './molecules/EmptyState';
+export * from './molecules/EntitySearchPicker';
+export * from './molecules/GridColumnFilter';
+export * from './molecules/GridFooter';
+export * from './molecules/GridOptions';
+export * from './molecules/ImageAdjustDialog';
+export * from './molecules/Popover';
 export * from './molecules/SearchField';
-export * from './molecules/Tooltip';
+export * from './molecules/SegmentedChoice';
+export * from './molecules/SegmentedTabs';
+export * from './molecules/Select';
+export * from './molecules/StatCard';
+export * from './molecules/Tabs';
 
-// Organisms — self-contained sections built from molecules.
-export * from './organisms/DropdownMenu';
+// Organisms — a region of the screen: a nav bar, a table, a toolbar.
+export * from './organisms/AppRail';
+export * from './organisms/ChatComposer';
+export * from './organisms/Conversation';
 export * from './organisms/GridActions';
-export * from './organisms/GridColumnFilter';
-export * from './organisms/GridFooter';
+export * from './organisms/LiveCanvas';
+export * from './organisms/MessageList';
+export * from './organisms/PageViewer';
+export * from './organisms/Sheet';
+export * from './organisms/Sidebar';
 export * from './organisms/Table';
+export * from './organisms/ThreadList';
+export * from './organisms/VideoPlayer';
 
 // Templates — page layouts with slots; no data of their own.
+export * from './templates/ChatPage';
 export * from './templates/GridPage';
+export * from './templates/SidebarLayout';

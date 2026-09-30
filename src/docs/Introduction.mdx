@@ -10,13 +10,11 @@ jeder App gleich aus, verhält sich gleich und wird an einer Stelle repariert.
 ## Atomic Design — wo gehört eine Komponente hin?
 
 - **Tokens** — Welche Farbe, welcher Radius, welche Schrift? `--primary`, `--radius`, `--font-sans`
-- **Atoms** — ein einzelnes Element ohne andere Komponenten darin: Button, Input, Label, Separator
-- **Molecules** — wenige Atome, die als _ein_ Bedienelement arbeiten: IconButton, SearchField, Tooltip
-- **Organisms** — ein eigenständiger Abschnitt aus Molekülen: DropdownMenu, Table, GridActions, GridColumnFilter, GridFooter
-- **Templates** — ein Seitenlayout mit Slots, ohne eigene Daten: GridPage
-
-Seiten (Pages) gibt es hier bewusst nicht: Seiten kennen Daten, Routen und
-Übersetzungen, und die gehören der App.
+- **Atoms** — ein Bedienelement, das man nur als Ganzes benutzt: Button, IconButton, Input, Textarea, PasswordInput, IntegerInput, Checkbox, Switch, RadioGroup, Badge, Chip, Avatar, InitialsAvatar, IconToggle, CopyLinkButton, Label, Separator, Tooltip
+- **Molecules** — ein kleines Widget aus mehreren Teilen: DropdownMenu, ContextMenu, Select, Combobox, Command, Popover, Dialog, AlertDialog, ConfirmActionDialog, Tabs, SegmentedTabs, SegmentedChoice, Collapsible, Breadcrumb, Card, Alert, StatCard, EmptyState, ColorPicker, EntitySearchPicker, SearchField, GridColumnFilter, GridFooter, GridOptions
+- **Organisms** — ein Bereich des Bildschirms: AppRail, Sidebar, Sheet, Table, GridActions, LiveCanvas, PageViewer
+- **Templates** — ein Seitenlayout mit Slots, ohne eigene Daten: GridPage, SidebarLayout
+- **Pages** — Prototypen ganzer Seiten mit Beispielinhalt, zum schnellen Ausprobieren von Entwürfen. Nur Stories, nie exportiert: Video-Lektion
 
 ## Drei Regeln, die ESLint erzwingt
 
@@ -27,8 +25,14 @@ Seiten (Pages) gibt es hier bewusst nicht: Seiten kennen Daten, Routen und
 3. **Nur Tokens, keine Farben.** `bg-primary` statt `bg-blue-500`. Wer das Theme
    ändern will, überschreibt CSS-Variablen.
 
+## Richtlinien
+
+Regeln, die für viele Komponenten gelten, stehen unter **Richtlinien**:
+**Tooltips** (wann ein Button einen bekommt, was hinein gehört) und **Grids**
+(Aktionen je nach Auswahl, ⋮-Tabellenoptionen, was sich die Tabelle merkt).
+
 ## Oben rechts
 
 - **Mode** schaltet hell/dunkel.
-- **Brand** tauscht die Primärfarbe — ein Beweis, dass jede Komponente nur Tokens liest.
+- **Theme** schaltet zwischen den Burgwiss-Presets (Standard, Burgwiss, Modern, Editorial) — ein Beweis, dass jede Komponente nur Tokens liest. Was jedes Theme einstellt, steht unter **Themes**.
 - Das **Accessibility**-Panel prüft jede Story mit axe.

@@ -25,7 +25,9 @@ for (const [path, mod] of Object.entries(modules)) {
             it(`${name} renders and passes axe`, async () => {
                 const { container } = render(<Story />);
                 expect(container.firstChild).not.toBeNull();
-                expect(await axe(container)).toHaveNoViolations();
+                // preload: false — axe otherwise waits for <video>/<audio> to
+                // load, which never happens in jsdom, and the test hangs.
+                expect(await axe(container, { preload: false })).toHaveNoViolations();
             });
         }
     });

@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Pages/Einleitung" />
+
+# Pages
+
+Hier steht, **wie ganze Seiten aussehen** — Stück für Stück, eine Seite nach der
+anderen. Jede Seite ist ein **Prototyp**: Beispielinhalt, keine Daten, keine
+Routen, kein Server. Knöpfe dürfen im Kleinen reagieren (ein Zustand, der in der
+Story umschaltet), mehr nicht.
+
+## Wozu
+
+**Schnell Entwürfe ausprobieren.** Eine Idee für eine Seite wird hier gebaut,
+angeklickt und besprochen, bevor jemand eine Zeile App-Code ändert. Weil jede
+Seite nur aus Bausteinen dieses Pakets besteht, zeigt sie auch, welcher Baustein
+noch fehlt.
+
+## Regeln
+
+1. **Nur Stories.** Ein Ordner `src/pages/<Name>/` enthält nur
+   `<Name>.stories.tsx`. Pages werden **nie** aus dem Paket exportiert — eine App
+   baut ihre echte Seite selbst. `tests/pages.test.ts` hält beides fest.
+2. **Nur Paket-Bausteine.** Braucht eine Seite etwas, das es nicht gibt, wird es
+   ein Baustein auf seiner Ebene (mit Story und Test) — nicht Code, der nur in
+   der Seite lebt. Kleine Seitenteile ohne eigenen Wert (eine Kopfleiste als
+   Platzhalter) dürfen in der Story bleiben.
+3. **Echt klingender Inhalt, auf Deutsch.** Kein „Lorem ipsum" — Entwürfe werden
+   an echten Texten beurteilt.
+4. **Die Zustände als Stories.** Nicht nur der schöne Fall: leer, erledigt,
+   Fehler. Jede Story wird automatisch gerendert und mit axe geprüft.
+5. **Klickbar verknüpft.** Knöpfe, die auf eine andere Seite führen, öffnen die
+   passende Story: `onClick={linkTo('Pages/Video-Lektion', 'Erledigt')}` aus
+   `@storybook/addon-links`. So wird aus mehreren Seiten ein klickbarer Ablauf.
+6. **Markiert.** Jede Page trägt `tags: ['prototype']` — in der Seitenleiste
+   steht dann „Prototyp".
+7. **Name = was die Person tut**, z. B. „Video-Lektion", nicht der Routenname. Ohne Sonderzeichen wie · oder Umlaute — der Name wird Teil der Story-URL.
+
+## Seiten bisher
+
+- **Video-Lektion** — Schüler sehen eine Video-Lektion.

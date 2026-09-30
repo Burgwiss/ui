@@ -3,47 +3,41 @@ import { useEffect, type ReactNode } from 'react';
 
 import './storybook.css';
 
-/**
- * Two toolbars re-skin every story:
- *  - Mode: light / dark (the `.dark` class, as the apps set it).
- *  - Brand: a few primary colours, to prove components only ever read tokens —
- *    an app themes the library by overriding CSS variables, nothing else.
- */
-const BRANDS: Record<string, Record<string, string>> = {
-    neutral: {},
-    teal: {
-        '--primary': 'oklch(0.52 0.09 220)',
-        '--primary-foreground': 'oklch(0.985 0 0)',
-        '--ring': 'oklch(0.52 0.09 220)',
-    },
-    violet: {
-        '--primary': 'oklch(0.49 0.2 290)',
-        '--primary-foreground': 'oklch(0.985 0 0)',
-        '--ring': 'oklch(0.49 0.2 290)',
-    },
-};
+import { applyLocale, DEFAULT_LOCALE, LocaleProvider, LOCALES, type StoryLocale } from './locale';
+import { applyTheme, DEFAULT_THEME, installThemeStyles, THEMES } from './themes/themes';
 
+/**
+ * Three toolbars re-skin every story:
+ *  - Language: what stories say, plus `lang` / `dir` on <html> (see locale.tsx).
+ *  - Theme: Burgwiss's design presets, as its ThemeResolver renders them.
+ *    Components only ever read tokens, so a theme is just a class on <html>.
+ *  - Mode: light / dark (the `.dark` class, as the apps set it).
+ */
 function ThemeFrame({
     mode,
-    brand,
+    theme,
+    locale,
     children,
 }: {
     mode: string;
-    brand: string;
+    theme: string;
+    locale: StoryLocale;
     children: ReactNode;
 }) {
     useEffect(() => {
-        const root = document.documentElement;
-        root.classList.toggle('dark', mode === 'dark');
-        const keys = new Set(Object.values(BRANDS).flatMap((b) => Object.keys(b)));
-        keys.forEach((k) => root.style.removeProperty(k));
-        Object.entries(BRANDS[brand] ?? {}).forEach(([k, v]) => root.style.setProperty(k, v));
-    }, [mode, brand]);
-    return <>{children}</>;
+        installThemeStyles();
+        applyTheme(document.documentElement, theme, mode === 'dark');
+        applyLocale(document.documentElement, locale);
+    }, [mode, theme, locale]);
+    return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
 }
 
 const withTheme: Decorator = (Story, context) => (
-    <ThemeFrame mode={context.globals.mode as string} brand={context.globals.brand as string}>
+    <ThemeFrame
+        mode={context.globals.mode as string}
+        theme={context.globals.theme as string}
+        locale={(context.globals.locale as StoryLocale) ?? DEFAULT_LOCALE}
+    >
         <Story />
     </ThemeFrame>
 );
@@ -51,6 +45,19 @@ const withTheme: Decorator = (Story, context) => (
 const preview: Preview = {
     decorators: [withTheme],
     globalTypes: {
+        locale: {
+            description: 'Sprache der Beispieltexte',
+            toolbar: {
+                title: 'Sprache',
+                icon: 'globe',
+                items: LOCALES.map((l) => ({
+                    value: l.id,
+                    title: l.title,
+                    right: l.dir === 'rtl' ? 'RTL' : undefined,
+                })),
+                dynamicTitle: true,
+            },
+        },
         mode: {
             description: 'Colour mode',
             toolbar: {
@@ -60,24 +67,36 @@ const preview: Preview = {
                 dynamicTitle: true,
             },
         },
-        brand: {
-            description: 'Brand colour (token override)',
+        theme: {
+            description: 'Theme',
             toolbar: {
-                title: 'Brand',
+                title: 'Theme',
                 icon: 'paintbrush',
-                items: Object.keys(BRANDS),
+                items: THEMES.map((t) => ({ value: t.id, title: t.title, right: t.summary })),
                 dynamicTitle: true,
             },
         },
     },
-    initialGlobals: { mode: 'light', brand: 'neutral' },
+    initialGlobals: { mode: 'light', theme: DEFAULT_THEME, locale: DEFAULT_LOCALE },
     parameters: {
         layout: 'centered',
         controls: { expanded: true },
         a11y: { test: 'error' },
         options: {
             storySort: {
-                order: ['Einführung', 'Tokens', 'Atoms', 'Molecules', 'Organisms', 'Templates'],
+                order: [
+                    'Einführung',
+                    'Tokens',
+                    'Themes',
+                    ['Vergleich', '*'],
+                    'Richtlinien',
+                    'Atoms',
+                    'Molecules',
+                    'Organisms',
+                    'Templates',
+                    'Pages',
+                    ['Einleitung', '*'],
+                ],
             },
         },
     },

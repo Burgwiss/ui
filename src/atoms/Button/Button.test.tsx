@@ -1,14 +1,14 @@
 import type * as React from 'react';
 import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Button } from './Button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from '../../organisms/DropdownMenu';
+} from '../../molecules/DropdownMenu';
 
 /**
  * Pin the forwardRef contract on the Button component.
@@ -77,5 +77,269 @@ describe('Button — forwardRef contract', () => {
 
         expect(trigger).toHaveAttribute('aria-expanded', 'true');
         expect(await screen.findByRole('menuitem', { name: 'One' })).toBeInTheDocument();
+    });
+});
+
+describe('Button — tooltip', () => {
+    async function setup() {
+        const { default: userEvent } = await import('@testing-library/user-event');
+        return userEvent.setup();
+    }
+
+    it('shows the tooltip on hover', async () => {
+        const user = await setup();
+        render(<Button tooltip="Kurs sichtbar machen">Veröffentlichen</Button>);
+
+        await user.hover(screen.getByRole('button', { name: 'Veröffentlichen' }));
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent('Kurs sichtbar machen');
+    });
+
+    it('shows the tooltip on keyboard focus and links it as the description', async () => {
+        const user = await setup();
+        render(<Button tooltip="Kurs sichtbar machen">Veröffentlichen</Button>);
+
+        await user.tab();
+        const button = screen.getByRole('button', { name: 'Veröffentlichen' });
+
+        expect(button).toHaveFocus();
+        expect(await screen.findByRole('tooltip')).toBeInTheDocument();
+        expect(button).toHaveAccessibleDescription('Kurs sichtbar machen');
+    });
+
+    it('closes the tooltip on Escape and keeps focus on the button', async () => {
+        const user = await setup();
+        render(<Button tooltip="Kurs sichtbar machen">Veröffentlichen</Button>);
+
+        await user.tab();
+        await screen.findByRole('tooltip');
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+        expect(screen.getByRole('button')).toHaveFocus();
+    });
+
+    it('keeps the visible text as the accessible name, not the tooltip', () => {
+        render(<Button tooltip="Kurs sichtbar machen">Veröffentlichen</Button>);
+
+        expect(screen.getByRole('button')).toHaveAccessibleName('Veröffentlichen');
+    });
+
+    it('renders a bare button with no tooltip wiring when a text button has no tooltip', async () => {
+        const user = await setup();
+        const { container } = render(<Button>Speichern</Button>);
+
+        await user.hover(screen.getByRole('button'));
+
+        expect(container.firstChild).toBe(screen.getByRole('button'));
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+
+    it('treats an empty tooltip as none', async () => {
+        const user = await setup();
+        render(<Button tooltip="">Speichern</Button>);
+
+        await user.hover(screen.getByRole('button'));
+
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+
+    it('gives an icon-only button its aria-label as the tooltip', async () => {
+        const user = await setup();
+        render(
+            <Button size="icon" aria-label="Neuer Kurs">
+                <svg aria-hidden="true" />
+            </Button>,
+        );
+
+        await user.hover(screen.getByRole('button', { name: 'Neuer Kurs' }));
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent('Neuer Kurs');
+    });
+
+    it.each(['icon', 'icon-xs', 'icon-sm', 'icon-lg'] as const)(
+        'gives an icon-only button (%s) a string tooltip as its aria-label',
+        (size) => {
+            render(
+                <Button size={size} tooltip="Neuer Ordner">
+                    <svg aria-hidden="true" />
+                </Button>,
+            );
+
+            expect(screen.getByRole('button')).toHaveAccessibleName('Neuer Ordner');
+        },
+    );
+
+    it('prefers an explicit aria-label over the tooltip on an icon-only button', () => {
+        render(
+            <Button size="icon" aria-label="Ordner anlegen" tooltip="Neuer Ordner in Kurse">
+                <svg aria-hidden="true" />
+            </Button>,
+        );
+
+        expect(screen.getByRole('button')).toHaveAccessibleName('Ordner anlegen');
+    });
+
+    it('does not borrow the tooltip as a name on a text button', () => {
+        render(<Button tooltip="Kurs sichtbar machen">Veröffentlichen</Button>);
+
+        expect(screen.getByRole('button')).not.toHaveAttribute('aria-label');
+    });
+
+    it('explains a disabled button on hover', async () => {
+        const user = await setup();
+        render(
+            <Button disabled tooltip="Erst eine Lektion anlegen">
+                Veröffentlichen
+            </Button>,
+        );
+
+        await user.hover(screen.getByRole('button', { name: 'Veröffentlichen' }));
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent('Erst eine Lektion anlegen');
+    });
+
+    it('lets the keyboard reach a disabled button with a reason, announced as disabled', async () => {
+        const user = await setup();
+        render(
+            <Button disabled tooltip="Erst eine Lektion anlegen">
+                Veröffentlichen
+            </Button>,
+        );
+
+        await user.tab();
+        const button = screen.getByRole('button', { name: 'Veröffentlichen' });
+
+        expect(button).toHaveFocus();
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(await screen.findByRole('tooltip')).toBeInTheDocument();
+        expect(button).toHaveAccessibleDescription('Erst eine Lektion anlegen');
+    });
+
+    it('never runs the handlers of a disabled button with a reason', async () => {
+        const user = await setup();
+        const onClick = vi.fn();
+        const onPointerDown = vi.fn();
+        const onKeyDown = vi.fn();
+        render(
+            <Button
+                disabled
+                tooltip="Erst eine Lektion anlegen"
+                onClick={onClick}
+                onPointerDown={onPointerDown}
+                onKeyDown={onKeyDown}
+            >
+                Veröffentlichen
+            </Button>,
+        );
+
+        const button = screen.getByRole('button');
+        await user.click(button);
+        button.focus();
+        await user.keyboard('{Enter}{ }');
+
+        expect(onClick).not.toHaveBeenCalled();
+        expect(onPointerDown).not.toHaveBeenCalled();
+        expect(onKeyDown).not.toHaveBeenCalled();
+    });
+
+    it('does not submit its form when disabled with a reason', async () => {
+        const user = await setup();
+        const onSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+        render(
+            <form onSubmit={onSubmit}>
+                <Button type="submit" disabled tooltip="Pflichtfelder fehlen">
+                    Speichern
+                </Button>
+            </form>,
+        );
+
+        const button = screen.getByRole('button');
+        await user.click(button);
+        button.focus();
+        await user.keyboard('{Enter}');
+
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it('does not open a dropdown from a disabled trigger with a reason', async () => {
+        const user = await setup();
+        render(
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button disabled tooltip="Keine Aktionen verfügbar">
+                        Mehr
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem>Eins</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>,
+        );
+
+        const trigger = screen.getByRole('button', { name: 'Mehr' });
+        await user.click(trigger);
+        trigger.focus();
+        await user.keyboard('{Enter}{ArrowDown}');
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+    });
+
+    it('keeps a disabled button without a reason natively disabled and out of the tab order', async () => {
+        const user = await setup();
+        render(<Button disabled>Veröffentlichen</Button>);
+
+        await user.tab();
+
+        expect(screen.getByRole('button')).toBeDisabled();
+        expect(document.body).toHaveFocus();
+    });
+
+    it('still forwards the ref when a tooltip wraps the button', () => {
+        const ref = createRef<HTMLButtonElement>();
+        render(
+            <Button ref={ref} tooltip="Hinweis">
+                Speichern
+            </Button>,
+        );
+
+        expect(ref.current).toBe(screen.getByRole('button'));
+    });
+
+    it('still works as a dropdown trigger when it has a tooltip', async () => {
+        const user = await setup();
+        render(
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button tooltip="Weitere Aktionen">Mehr</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem>Eins</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>,
+        );
+
+        const trigger = screen.getByRole('button', { name: 'Mehr' });
+        expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+
+        await user.click(trigger);
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        expect(await screen.findByRole('menuitem', { name: 'Eins' })).toBeInTheDocument();
+    });
+
+    it('carries a tooltip through asChild onto a link', async () => {
+        const user = await setup();
+        render(
+            <Button asChild tooltip="Öffnet die Kursseite">
+                <a href="/kurse/arabisch">Ansehen</a>
+            </Button>,
+        );
+
+        const link = screen.getByRole('link', { name: 'Ansehen' });
+        await user.hover(link);
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent('Öffnet die Kursseite');
     });
 });

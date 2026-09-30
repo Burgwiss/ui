@@ -14,5 +14,7 @@ const meta: Meta<typeof SearchField> = {
 };
 export default meta;
 
+/** The empty field showing the placeholder, which is also its accessible name. */
 export const Empty: StoryObj<typeof SearchField> = {};
+/** A field with an existing query, e.g. restored from the URL. */
 export const WithValue: StoryObj<typeof SearchField> = { args: { value: 'Tajweed' } };

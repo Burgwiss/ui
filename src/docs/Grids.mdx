@@ -1,0 +1,132 @@
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as GridPageStories from '../templates/GridPage/GridPage.stories';
+
+<Meta title="Richtlinien/Grids" />
+
+# Grids
+
+Jede Liste ist eine `GridPage` und wird bedient wie eine Liste in einer
+Desktop-App: klicken, markieren, Rechtsklick, Tastatur.
+
+```
+[✕ 3 ausgewählt | Aktionen für diese Auswahl] ········ [Suche] [⋮]
+[aktive Filter-Chips]
+[das Grid — Kopfzeile bleibt stehen, Linien zwischen den Spalten]
+[Anzahl ······························· Blättern]
+```
+
+<Canvas of={GridPageStories.Kursliste} />
+
+## Ein Hook, eine Liste von Aktionen
+
+Das Verhalten steckt in `useGrid`. Jede Tabelle beschreibt **alle** ihre
+Aktionen einmal; Werkzeugleiste, Rechtsklick-Menü und Tastatur lesen dieselbe
+Liste. So kann jede Tabelle selbst wählen, was sie wann anbietet.
+
+```tsx
+const grid = useGrid({
+    id: 'admin.courses', // fester Name, merkt sich die Einstellungen
+    rowIds: rows.map((r) => r.id), // die sichtbaren Zeilen, in Reihenfolge
+    selection: 'multiple', // 'multiple' | 'single' | 'none'
+    actions: [
+        { id: 'new', label: t('courses.new'), icon: <Plus />, onSelect: create, tone: 'primary', shortcut: 'N' },
+        { id: 'edit', label: t('courses.edit'), icon: <Pencil />, onSelect: ([id]) => edit(id), when: ['one'], isDefault: true },
+        { id: 'delete', label: t('courses.delete'), icon: <Trash2 />, onSelect: (ids) => remove(ids), when: ['one', 'many'], tone: 'destructive', shortcut: 'Delete' },
+    ],
+});
+
+<GridPage grid={grid} selectionLabels={…} shortcutLabels={{ Mod: 'Strg', Delete: 'Entf' }} options={<GridOptions … />}>
+    <Table {...grid.getTableProps()}>
+        …
+        <TableRow {...grid.getRowProps(row.id)}>
+            {grid.showCheckboxes && <TableCell><input {...grid.getRowCheckboxProps(row.id, label)} /></TableCell>}
+```
+
+`onSelect` bekommt die ids, auf die die Aktion wirkt. `disabled` darf eine
+Funktion dieser ids sein — „nicht für archivierte Kurse" —, `disabledReason`
+sagt im Tooltip und im Menü, warum.
+
+## Aktionen wechseln mit der Auswahl
+
+Jede Aktion sagt in `when`, wann sie gilt. Ohne `when` gilt `['none']`.
+
+- **Nichts markiert** — `none`: Neu, Importieren, Alle exportieren, Neu laden
+- **Eine Zeile** — `one`: Bearbeiten, Vorschau — alles, was _einen_ Eintrag öffnet
+- **Mehrere Zeilen** — `many`: Auswahl exportieren, Zusammenführen
+- **Eine oder mehrere** — `['one', 'many']`: Duplizieren, Verschieben, Löschen
+
+Die Werkzeugleiste zeigt **nur Icon-Buttons**, jeder mit Tooltip samt Kürzel.
+Die Hauptaktion (`tone: 'primary'`) ist gefüllt, bleibt aber ein Icon. Leere
+Gruppen fallen samt Trennstrich weg.
+
+<Canvas of={GridPageStories.MehrereZeilen} />
+
+## Auswahl
+
+- **Klick** wählt eine Zeile. **⌘/Strg-Klick** nimmt eine dazu oder heraus.
+  **Umschalt-Klick** wählt den Bereich bis zur zuletzt geklickten Zeile.
+- **Kästchen** links, und oben „alle" (halb gefüllt, wenn nur manche gewählt
+  sind). Klicks auf Knöpfe und Links in einer Zeile wählen nichts.
+- **Doppelklick** führt die Standardaktion aus (`isDefault`, meist „Bearbeiten").
+- Verschwindet eine Zeile (Filter, Suche, Seite), fällt sie aus der Auswahl —
+  eine Aktion trifft nie eine Zeile, die man nicht sieht.
+
+Die App legt fest, was geht (`selection`):
+
+- `'multiple'` — Kästchen, Bereiche, alles auswählen.
+- `'single'` — keine Kästchen, höchstens eine Zeile.
+- `'none'` — reine Leseliste, nur die Listen-Aktionen.
+
+In **⋮ → Zeilen auswählen** kann jede Person die Auswahl für diese Tabelle
+abschalten; das merkt sich die Tabelle.
+
+<Canvas of={GridPageStories.Einzelauswahl} />
+
+## Rechtsklick
+
+Rechtsklick öffnet **dieselben Aktionen** als Menü, mit Kürzeln.
+
+- Auf einer Zeile außerhalb der Auswahl: diese Zeile wird die Auswahl.
+- Auf einer Zeile in der Auswahl: die Auswahl bleibt.
+- Auf leerer Fläche: Auswahl weg, das Menü zeigt die Listen-Aktionen.
+
+## Tastatur
+
+Im Grid ist genau eine Zeile ein Tab-Stopp; von dort:
+
+- **↑ ↓** — nächste Zeile, die Auswahl folgt (wie im Dateimanager)
+- **Umschalt+↑ ↓** — Auswahl erweitern
+- **⌘/Strg+↑ ↓** — nur den Fokus bewegen, Auswahl behalten
+- **Leertaste** — Zeile an- oder abwählen
+- **Pos1 / Ende** — erste / letzte Zeile
+- **Enter** — Standardaktion
+- **⌘/Strg+A** — alle auswählen
+- **Esc** — Auswahl aufheben
+- **/** — in die Suche springen
+- **die Kürzel der Aktionen** — `shortcut: 'Mod+D'`; `Mod` ist ⌘ auf dem Mac,
+  Strg sonst. Nur Aktionen, die zur Auswahl passen und nicht deaktiviert sind.
+
+Beim Tippen in einem Eingabefeld greift keines davon. Kürzel wie `Mod+N`, `Mod+R`
+oder `Mod+W` gehören dem Browser — nicht belegen.
+
+## ⋮ Tabellenoptionen
+
+Ganz rechts, neben der Suche: **Spalten ›** (ein Untermenü), Zeilenhöhe,
+Zeilen auswählen, Zurücksetzen.
+
+- **Die Grid-`id` ist ein fester Name, den die App wählt** — am besten der
+  Routenname (`'admin.courses'`). Nicht die URL: Die ändert sich mit Filtern,
+  Seitenzahl, Sprache und Umbenennungen, und jedes Mal wären die Einstellungen
+  weg.
+- **Gespeichert wird unter** `burgwiss-ui:grid:<id>`, mit einer
+  Versionsnummer. Kaputte oder fremde Einträge werden ignoriert, nie halb
+  gelesen. Wer wieder bei den Standardwerten landet, hinterlässt nichts.
+- **Gespeichert werden _ausgeblendete_ Spalten.** Eine später neu eingebaute
+  Spalte erscheint also für alle, statt still zu fehlen.
+- Die Spalte, die eine Zeile benennt, bekommt `hideable: false`.
+- Einstellungen gelten pro **Browser**, nicht pro Person. Wer zwei Personen an
+  einem Rechner trennen will, nimmt die Nutzer-ID in die `id`.
+- Ändert ein anderer Tab dieselbe Tabelle, zieht dieser Tab nach.
+- Ohne `localStorage` (Privatmodus, voller Speicher) funktioniert alles weiter —
+  nur eben für diesen Besuch.

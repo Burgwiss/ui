@@ -12,6 +12,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Divides stacked sections; the default orientation. */
 export const Horizontal: Story = {
     render: () => (
         <div className="flex w-64 flex-col gap-3">
@@ -22,6 +23,7 @@ export const Horizontal: Story = {
     ),
 };
 
+/** Divides items in a row, e.g. inline actions; needs a parent with a height. */
 export const Vertical: Story = {
     render: () => (
         <div className="flex h-8 items-center gap-3 text-sm text-muted-foreground">

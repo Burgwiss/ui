@@ -1,0 +1,98 @@
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as ButtonStories from '../atoms/Button/Button.stories';
+
+<Meta title="Richtlinien/Tooltips" />
+
+# Tooltips
+
+Jeder `Button` kann einen Tooltip tragen. Er erscheint nach 200 ms beim Hovern
+**und** beim Fokus mit der Tab-Taste — eine Tastatur-Nutzerin sieht dasselbe wie
+eine Maus-Nutzerin. Ein Prop, kein eigenes Zusammenstecken:
+
+```tsx
+<Button tooltip="Kurs für alle Teilnehmenden sichtbar machen">Veröffentlichen</Button>
+```
+
+<Canvas of={ButtonStories.WithTooltip} />
+
+## Wann ein Tooltip?
+
+- **Nur-Icon-Button — immer.** Ohne Wort ist der Tooltip das Einzige, was sagt,
+  was der Button tut. Das `aria-label` _ist_ der Tooltip: ein Text, zwei Aufgaben,
+  sie können nicht auseinanderlaufen.
+- **Deaktivierter Button — immer mit Grund.** „Warum kann ich hier nicht
+  klicken?" ist die Frage, die ein grauer Button sofort auslöst.
+- **Text-Button — wenn der Klick mehr tut, als das Wort sagt.** „Veröffentlichen"
+  sagt nicht, _wer_ es danach sieht. „Löschen" sagt nicht, ob es rückgängig geht.
+- **Nicht:** das Label wiederholen. „Speichern" → „Speichern" ist Rauschen, und
+  ein Screenreader liest es doppelt vor. Dann lieber keinen Tooltip.
+
+## Was hinein gehört
+
+- **Die Folge, nicht die Handlung.** „Kann 30 Tage lang wiederhergestellt werden"
+  statt „Löscht den Kurs".
+- **Kurz.** Ein Satz, ohne Punkt am Ende, etwa 60 Zeichen. Wer mehr erklären muss,
+  braucht einen Hilfetext auf der Seite, keinen Tooltip.
+- **Du-Form**, wie die ganze Oberfläche.
+- **Nie das einzige Wissen.** Auf Touch-Geräten gibt es kein Hovern. Was man
+  wissen _muss_, steht sichtbar auf der Seite; der Tooltip ergänzt nur.
+- **Ein Text-Prop aus der App** — die Bibliothek bringt keine eigenen Texte mit.
+  In Burgwiss also `tooltip={t('courses.publish.hint')}`.
+
+## Nur Icon
+
+Bei den Größen `icon`, `icon-xs`, `icon-sm` und `icon-lg` genügt eins von beiden:
+
+```tsx
+// aria-label wird zum Tooltip
+<Button size="icon" aria-label="Neuer Kurs"><Plus /></Button>
+
+// ein Text-Tooltip wird zum aria-label
+<Button size="icon-sm" variant="outline" tooltip="Neuer Ordner"><Plus /></Button>
+```
+
+<Canvas of={ButtonStories.IconOnly} />
+
+Stehen beide da, gewinnt das `aria-label` als Name, der Tooltip bleibt Tooltip.
+
+`IconButton` ist das Gleiche als zurückhaltende Werkzeugleisten-Variante (grau,
+ohne Füllung) — gleiches Verhalten, gleiche Regel.
+
+## Deaktiviert mit Grund
+
+Ein nativ deaktivierter Button bekommt weder Maus- noch Fokus-Ereignisse, sein
+Tooltip könnte also nie aufgehen. Hat er einen `tooltip`, bleibt er deshalb
+fokussierbar und meldet sich per `aria-disabled` als deaktiviert. Klicks, Enter
+und Leertaste tun nichts — auch kein Formular-Absenden, auch kein Menü-Öffnen.
+Screenreader lesen „Veröffentlichen, Schaltfläche, nicht verfügbar — Erst eine
+Lektion anlegen".
+
+```tsx
+<Button disabled tooltip="Erst eine Lektion anlegen, dann veröffentlichen">
+    Veröffentlichen
+</Button>
+```
+
+<Canvas of={ButtonStories.DisabledWithReason} />
+
+Ein deaktivierter Button **ohne** Tooltip bleibt außerhalb der Tab-Reihenfolge,
+wie bisher.
+
+## Barrierefreiheit — was der Button für dich erledigt
+
+- Der Tooltip wird die **Beschreibung** (`aria-describedby`), der **Name** bleibt
+  der sichtbare Text. Screenreader lesen „Veröffentlichen, Schaltfläche — Kurs für
+  alle Teilnehmenden sichtbar machen".
+- Escape schließt den Tooltip, ohne den Fokus zu verlieren.
+- Funktioniert auch mit `asChild` (Link als Button) und als Auslöser eines
+  `DropdownMenu`.
+- Das native `title`-Attribut ist **kein** Tooltip: ungestylt, vom Betriebssystem
+  verzögert, auf Touch gar nicht da. Nicht benutzen.
+
+## Seite
+
+`tooltipSide` wählt `top` (Standard), `right`, `bottom` oder `left`. Radix weicht
+selbst aus, wenn am Rand kein Platz ist — meist ist `top` richtig.
+
+<Canvas of={ButtonStories.Sides} />

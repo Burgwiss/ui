@@ -21,6 +21,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Proven render copied from design-system/registry.tsx (entry id: 'table').
+/** Minimal table: a header row and a body row, the structure every other table builds on. */
 export const Default: Story = {
     render: () => (
         <Table>
@@ -40,6 +41,7 @@ export const Default: Story = {
     ),
 };
 
+/** Give the table a visible description with `TableCaption` (rendered below the table). */
 export const WithCaption: Story = {
     name: 'With caption',
     render: () => (
@@ -73,6 +75,7 @@ export const WithCaption: Story = {
     ),
 };
 
+/** Totals or summaries: `TableFooter` adds a muted, bold row, with numeric columns right-aligned. */
 export const WithFooter: Story = {
     name: 'With footer',
     render: () => (
@@ -107,6 +110,7 @@ export const WithFooter: Story = {
     ),
 };
 
+/** Highlight a chosen row: put `data-state="selected"` on its `TableRow`. */
 export const SelectedRow: Story = {
     name: 'Selected row',
     render: () => (

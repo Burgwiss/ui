@@ -8,13 +8,22 @@ export interface SearchFieldProps extends Omit<
     ComponentProps<'input'>,
     'type' | 'onChange' | 'value'
 > {
+    /** The current text (controlled). */
     value: string;
+    /** Called with the new text on every keystroke; receives the string, not the event. */
     onValueChange: (value: string) => void;
     /** Also used as the accessible name — a search box has no visible label. */
     placeholder: string;
 }
 
-/** A search input with a leading magnifier. The placeholder doubles as its label. */
+/**
+ * A search input with a leading magnifier, for filtering a list or table. The placeholder
+ * doubles as its accessible name, so it must always be passed and translated. Other input
+ * attributes (name, autoFocus, ...) pass through; `type`, `onChange` and `value` are set here.
+ * For picking a record from search results use `EntitySearchPicker`.
+ *
+ * @summary Compact search input with a magnifier icon; the placeholder is also its accessible name.
+ */
 export function SearchField({
     value,
     onValueChange,

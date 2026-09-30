@@ -1,0 +1,63 @@
+import { ChangeEvent } from 'react';
+import { hexToOklch, oklchToHex } from '../../lib/color';
+import { cn } from '../../lib/cn';
+
+export interface ColorPickerProps {
+    /** Id of the text input, so an outside `<Label htmlFor>` can point at it. */
+    id: string;
+    /** The current colour as an OKLCH string, e.g. `oklch(0.62 0.13 230)`. Controlled: the app keeps the state. */
+    value: string;
+    /** Called with an OKLCH string on every change, from the swatch (converted from hex) or from typing in the text field (passed through as typed, not validated). */
+    onChange: (value: string) => void;
+    /** Accessible name of the native colour swatch, in the app's language. */
+    swatchAriaLabel: string;
+    /** Marks the text input `aria-invalid`; set it when the app's validation rejects the value. */
+    ariaInvalid?: boolean;
+    /** Extra classes for the outer row. */
+    className?: string;
+}
+
+/**
+ * A colour field for theme tokens: a native colour swatch plus a text input, both editing the
+ * same OKLCH string (e.g. `oklch(0.62 0.13 230)`, the colour space the theme tokens use). The
+ * native swatch speaks hex, so the value is converted both ways; the text field takes OKLCH directly. Use it when a person has to choose a brand or theme colour; the swatch
+ * shows black while the text is not a value it can parse. Pair it with a `Label`, since it
+ * renders none of its own.
+ *
+ * @summary Native colour swatch plus text field that edit one OKLCH colour string.
+ */
+export function ColorPicker({
+    id,
+    value,
+    onChange,
+    swatchAriaLabel,
+    ariaInvalid,
+    className,
+}: ColorPickerProps) {
+    const hex = oklchToHex(value) ?? '#000000';
+
+    const handleSwatch = (e: ChangeEvent<HTMLInputElement>) => {
+        onChange(hexToOklch(e.target.value));
+    };
+
+    return (
+        <div className={cn('flex items-stretch gap-2', className)}>
+            <input
+                type="color"
+                value={hex}
+                onChange={handleSwatch}
+                aria-label={swatchAriaLabel}
+                className="h-9 w-12 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <input
+                id={id}
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                spellCheck={false}
+                aria-invalid={ariaInvalid || undefined}
+                className="block w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none"
+            />
+        </div>
+    );
+}

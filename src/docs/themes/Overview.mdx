@@ -1,0 +1,16 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+import { ThemeOverview } from '../../../.storybook/themes/ThemeSheet';
+
+<Meta title="Themes/Vergleich" tags={['!manifest']} />
+
+# Themes
+
+Die Themes sind die Design-Presets von Burgwiss — genau so, wie Burgwiss' Theme-Resolver
+sie für eine Schule ausgibt (übernommen mit `npm run themes:sync`, nicht abgeschrieben).
+Oben in der Leiste schaltet **Theme** jede Story um, **Mode** hell und dunkel.
+
+Jede Schule startet mit einem Preset und ändert einzelne Werte. Eine Komponente liest nur
+Tokens — darum sieht sie in jedem Theme richtig aus, ohne es zu kennen.
+
+<ThemeOverview />
