@@ -75,6 +75,13 @@ export interface UseGridOptions<T> {
     isExpandable?: (row: T) => boolean;
     defaults?: Partial<GridPreferences>;
     storage?: GridPreferenceStorage | null;
+    /**
+     * The filters to start with, instead of the active saved view's. For
+     * `server` mode, where the address is the truth: pass the filters the
+     * server answered for (e.g. parsed from `?status[]=pending`), so the chips
+     * and the rows agree on first render.
+     */
+    initialFilters?: GridFilter[];
 }
 
 export interface GridApi<T = unknown> {
@@ -239,6 +246,7 @@ export function useGrid<T>({
     isExpandable,
     defaults,
     storage,
+    initialFilters,
 }: UseGridOptions<T>): GridApi<T> {
     const preferences = useGridPreferences(id, { defaults, storage });
     const prefs = preferences.values;
@@ -250,7 +258,10 @@ export function useGrid<T>({
     // Filters live in state, not in storage: a filter nobody remembers setting
     // hides rows. They come back only as part of the active saved view.
     const [filters, setFilters] = useState<GridFilter[]>(
-        () => prefs.views.find((v) => v.id === prefs.activeView)?.state.filters ?? [],
+        () =>
+            initialFilters ??
+            prefs.views.find((v) => v.id === prefs.activeView)?.state.filters ??
+            [],
     );
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [expandedRows, setExpandedRows] = useState<Set<RowId>>(new Set());

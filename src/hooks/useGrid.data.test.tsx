@@ -132,6 +132,17 @@ describe('useGrid — server mode', () => {
         expect(result.current.canGroup).toBe(false);
     });
 
+    it('starts with the filters it is given — the address is the truth in server mode', () => {
+        const onQueryChange = vi.fn();
+        const status = { id: 'status', type: 'choice' as const, values: ['draft'] };
+        const { result } = setup({ mode: 'server', onQueryChange, initialFilters: [status] });
+        expect(result.current.filters).toEqual([status]);
+        // Starting from them is not a change: nothing is fetched on mount.
+        expect(onQueryChange).not.toHaveBeenCalled();
+        act(() => result.current.removeFilter('status'));
+        expect(onQueryChange).toHaveBeenLastCalledWith({ sorting: [], filters: [] });
+    });
+
     it('exposes the current query for the first request', () => {
         const first = setup({ mode: 'server' });
         act(() => first.result.current.toggleSort('title'));
