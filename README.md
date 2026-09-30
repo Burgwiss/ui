@@ -7,16 +7,17 @@ organisms and templates, built on React 19, Radix and Tailwind CSS v4.
 
 ## Use it in an app
 
-No registry yet — install straight from GitHub, pinned to a tag. npm runs the
-package's `prepare` script, which builds `dist/`:
+No registry yet — install straight from GitHub, pinned to a tag. Each release
+tag carries the built `dist/` (see Releases), so nothing is built on install —
+which matters because Burgwiss runs npm with `ignore-scripts`:
 
 ```bash
-npm install github:Burgwiss/ui#v0.1.0
+npm install github:Burgwiss/ui#v0.2.0
 ```
 
 ```jsonc
 // package.json
-"dependencies": { "@burgwiss/ui": "github:Burgwiss/ui#v0.1.0" }
+"dependencies": { "@burgwiss/ui": "github:Burgwiss/ui#v0.2.0" }
 ```
 
 Peer dependencies the app must have: `react` 19, `react-dom` 19, `radix-ui`,
@@ -69,6 +70,10 @@ to the box. `/version.txt` on the site names the commit that is live.
 ## Releases
 
 Semver, as git tags (`v0.2.0`). Apps pin a tag and update on purpose.
+
+Bump `version` in `package.json` on main, then run `bash scripts/release.sh`.
+It builds, commits `dist/` on a detached commit on top of main, tags that
+commit and pushes the tag. Main never holds build output; only the tag does.
 **Breaking** = a removed or renamed export, prop, or CSS variable.
 
 See [AGENTS.md](AGENTS.md) for where a component goes and the rules it must follow.
