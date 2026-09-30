@@ -18,34 +18,95 @@ Desktop-App: klicken, markieren, Rechtsklick, Tastatur.
 
 <Canvas of={GridPageStories.Kursliste} />
 
-## Ein Hook, eine Liste von Aktionen
+## Spalten beschreiben, `useGrid` rechnet, `DataGrid` zeigt
 
-Das Verhalten steckt in `useGrid`. Jede Tabelle beschreibt **alle** ihre
-Aktionen einmal; Werkzeugleiste, Rechtsklick-Menü und Tastatur lesen dieselbe
-Liste. So kann jede Tabelle selbst wählen, was sie wann anbietet.
+Eine Tabelle beschreibt ihre **Spalten** und ihre **Aktionen** einmal. `useGrid`
+hält den ganzen Zustand — Sortierung, Filter, Gruppen, aufgeklappte Zeilen,
+Spaltenbreiten, Reihenfolge, Anheften, gespeicherte Ansichten, Bearbeiten,
+Auswahl — und `DataGrid` zeigt ihn.
 
 ```tsx
+const columns: GridColumn<Course>[] = [
+    { id: 'title', header: t('courses.title'), hideable: false, width: 280, filter: { type: 'text' } },
+    { id: 'category', header: t('courses.category'), groupable: true,
+      filter: { type: 'choice', options: categories } },
+    { id: 'price', header: t('courses.price'), align: 'right', aggregate: 'sum',
+      cell: (c) => euro(c.price), filter: { type: 'number' },
+      editable: { type: 'number', onCommit: (c, next) => savePrice(c.id, next) } },
+    { id: 'starts', header: t('courses.starts'), filter: { type: 'date' } },
+];
+
 const grid = useGrid({
-    id: 'admin.courses', // fester Name, merkt sich die Einstellungen
-    rowIds: rows.map((r) => r.id), // die sichtbaren Zeilen, in Reihenfolge
-    selection: 'multiple', // 'multiple' | 'single' | 'none'
-    actions: [
-        { id: 'new', label: t('courses.new'), icon: <Plus />, onSelect: create, tone: 'primary', shortcut: 'N' },
-        { id: 'edit', label: t('courses.edit'), icon: <Pencil />, onSelect: ([id]) => edit(id), when: ['one'], isDefault: true },
-        { id: 'delete', label: t('courses.delete'), icon: <Trash2 />, onSelect: (ids) => remove(ids), when: ['one', 'many'], tone: 'destructive', shortcut: 'Delete' },
-    ],
+    id: 'admin.courses',               // fester Name — merkt sich die Einstellungen
+    rows, getRowId: (c) => c.id, columns,
+    mode: 'server',                    // Server sortiert und filtert (Inertia)
+    onQueryChange: (q) => router.reload({ data: { sort: q.sorting, filter: q.filters } }),
+    actions,
+    isExpandable: (c) => c.offerings.length > 0,
 });
 
-<GridPage grid={grid} selectionLabels={…} shortcutLabels={{ Mod: 'Strg', Delete: 'Entf' }} options={<GridOptions … />}>
-    <Table {...grid.getTableProps()}>
-        …
-        <TableRow {...grid.getRowProps(row.id)}>
-            {grid.showCheckboxes && <TableCell><input {...grid.getRowCheckboxProps(row.id, label)} /></TableCell>}
+<GridPage grid={grid} chips={<GridFilterChips … />} options={<><GridViewsMenu … /><GridOptions … /></>}>
+    <DataGrid grid={grid} labels={…} renderDetail={(c) => <Offerings course={c} />}
+        renderFilter={(col, close) => <GridFilterEditor … />} loading={loading} error={error} />
+</GridPage>
 ```
 
-`onSelect` bekommt die ids, auf die die Aktion wirkt. `disabled` darf eine
-Funktion dieser ids sein — „nicht für archivierte Kurse" —, `disabledReason`
-sagt im Tooltip und im Menü, warum.
+**Client oder Server.** `mode: 'client'` (Standard) sortiert, filtert und
+gruppiert im Browser — für kleine Listen. `mode: 'server'` lässt die Zeilen, wie
+sie kommen, und meldet jede Änderung über `onQueryChange`; für die erste Anfrage
+steht die gemerkte Sortierung in `grid.query`. Gruppieren gibt es nur im Browser.
+
+## Was jede Spalte kann
+
+- **Sortieren:** Klick auf die Überschrift — aufsteigend, absteigend, aus.
+  **Umschalt-Klick** fügt eine weitere Sortierung hinzu (die Nummer zeigt die
+  Reihenfolge). `aria-sort` sagt es Screenreadern. `sortable: false` schaltet ab.
+  Text wird sortiert wie gelesen: „Lektion 2" vor „Lektion 10", Ä bei A; leere
+  Werte immer ans Ende.
+- **Spaltenmenü (⋮ an der Überschrift):** sortieren, **Filtern …**, danach
+  gruppieren, links/rechts **anheften**, nach links/rechts verschieben, **Breite
+  anpassen**, ausblenden. Alles auch per Tastatur.
+- **Breite:** am rechten Rand ziehen — oder den Griff mit Tab erreichen und
+  ← → (Umschalt: große Schritte), Pos1/Ende, Enter = an Inhalt anpassen.
+  Doppelklick passt an.
+- **Reihenfolge:** Überschrift ziehen und auf eine andere fallen lassen. Ein
+  Klick ohne Bewegung sortiert weiterhin. Ohne Maus: „Nach links/rechts
+  verschieben" im Menü.
+- **Anheften:** eine angeheftete Spalte bleibt beim seitlichen Scrollen stehen
+  (nach Auswahl- und Aufklapp-Spalte).
+- **Filtern:** je nach Typ Text (enthält / ist genau / beginnt mit), Auswahl
+  (Häkchen), Zahl (von–bis) oder Datum (ab–bis). Aktive Filter stehen als
+  **Chips** über der Tabelle; ein Klick auf ✕ entfernt einen.
+- **Bearbeiten:** `editable` macht eine Zelle zum Knopf. Klick → Feld, Enter
+  speichert, Esc bricht ab. Der neue Wert steht sofort da; lehnt `onCommit` ab,
+  kommt der alte zurück und der Grund steht am Feld. `validate` prüft vorher.
+- **Kopieren und Export:** Strg/⌘+C kopiert die markierten Zeilen als Tabelle
+  (für Excel). `grid.exportCsv()` liefert CSV der sichtbaren Spalten — alle Zeilen
+  oder nur die Auswahl; mit `downloadText()` wird eine Datei daraus. Zellen, die
+  eine Tabellenkalkulation als Formel ausführen würde, werden entschärft.
+
+## Zeilen
+
+- **Aufklappen:** `isExpandable` + `renderDetail` → ein ▸ vor der Zeile öffnet
+  ein Detail darunter (z. B. die Ausführungen eines Kurses). Auch mit → und ←.
+- **Gruppieren:** nach einer oder mehreren Spalten (`groupable`), verschachtelt.
+  Jede Gruppe zeigt ihre Anzahl und die Summen (`aggregate`: count, sum, avg,
+  min, max).
+- **Lange Listen:** ab 200 Zeilen zeichnet das Grid nur, was sichtbar ist.
+- **Laden, leer, Fehler:** `loading` zeigt Platzhalterzeilen und sagt „Lädt …"
+  an; `error` zeigt den Grund und „Erneut versuchen"; ohne Zeilen erscheint
+  `emptyState` oder `labels.empty`.
+
+## Gespeicherte Ansichten
+
+**Ansichten** (Menü neben der Suche) speichern Filter, Sortierung, Gruppen,
+Spalten und Zeilenhöhe unter einem Namen, z. B. „Entwürfe dieser Woche". Die
+aktive Ansicht kommt beim nächsten Besuch zurück — mit ihren Filtern. Weicht die
+Tabelle ab, zeigt ein Punkt „geändert"; „Ansicht aktualisieren" überschreibt sie.
+Filter ohne Ansicht werden nicht gemerkt: ein Filter, an den sich niemand
+erinnert, versteckt Zeilen.
+
+<Canvas of={GridPageStories.Gruppiert} />
 
 ## Aktionen wechseln mit der Auswahl
 
@@ -60,7 +121,6 @@ Die Werkzeugleiste zeigt **nur Icon-Buttons**, jeder mit Tooltip samt Kürzel.
 Die Hauptaktion (`tone: 'primary'`) ist gefüllt, bleibt aber ein Icon. Leere
 Gruppen fallen samt Trennstrich weg.
 
-<Canvas of={GridPageStories.MehrereZeilen} />
 
 ## Auswahl
 

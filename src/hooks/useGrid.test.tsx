@@ -5,6 +5,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GridActionItem, RowId } from './gridActions';
 import { useGrid, type GridSelectionMode } from './useGrid';
 
+/** Minimal rows for tests that only care about ids. */
+const byIds = (ids: RowId[]) => ({
+    rows: ids.map((id) => ({ id })),
+    getRowId: (r: { id: RowId }) => r.id,
+    columns: [{ id: 'id', header: 'Id' }],
+});
+
 afterEach(() => localStorage.clear());
 
 const ROWS = [
@@ -25,7 +32,14 @@ function Harness({
     rows?: typeof ROWS;
     onState?: (ids: RowId[]) => void;
 }) {
-    const grid = useGrid({ id: 'test', rowIds: rows.map((r) => r.id), selection: mode, actions });
+    const grid = useGrid({
+        id: 'test',
+        rows,
+        getRowId: (r) => r.id,
+        columns: [{ id: 'name', header: 'Name' }],
+        selection: mode,
+        actions,
+    });
     onState?.(grid.selectedIds);
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -162,7 +176,7 @@ describe('useGrid — selection modes', () => {
 
     it('turns selection off when the person switches it off, and clears it', () => {
         const { result } = renderHook(() =>
-            useGrid({ id: 'x', rowIds: [1, 2], defaultSelectedIds: [1] }),
+            useGrid({ id: 'x', ...byIds([1, 2]), defaultSelectedIds: [1] }),
         );
         expect(result.current.selectedIds).toEqual([1]);
         act(() => result.current.preferences.setSelectionEnabled(false));
@@ -175,7 +189,7 @@ describe('useGrid — selection modes', () => {
     it('drops selected rows that are no longer on screen', () => {
         const { result, rerender } = renderHook(
             ({ ids }: { ids: RowId[] }) =>
-                useGrid({ id: 'x', rowIds: ids, defaultSelectedIds: [1, 3] }),
+                useGrid({ id: 'x', ...byIds(ids), defaultSelectedIds: [1, 3] }),
             { initialProps: { ids: [1, 2, 3] } },
         );
         rerender({ ids: [1, 2] });
@@ -305,6 +319,29 @@ describe('useGrid — keyboard', () => {
     });
 });
 
+describe('useGrid — copy', () => {
+    // userEvent.setup() puts its own clipboard on navigator; read what landed there.
+    it('copies the selected rows with ⌘/Ctrl+C', async () => {
+        const user = userEvent.setup();
+        render(<Harness />);
+        await user.click(cell('Zwei'));
+        await user.keyboard('{Control>}c{/Control}');
+        expect(await navigator.clipboard.readText()).toBe('Name\nZwei');
+    });
+
+    it('leaves ⌘/Ctrl+C alone when the person highlighted text themselves', async () => {
+        const user = userEvent.setup();
+        render(<Harness />);
+        await user.click(cell('Zwei'));
+        const spy = vi
+            .spyOn(window, 'getSelection')
+            .mockReturnValue({ toString: () => 'Zwei' } as Selection);
+        await user.keyboard('{Control>}c{/Control}');
+        expect(await navigator.clipboard.readText()).toBe('');
+        spy.mockRestore();
+    });
+});
+
 describe('useGrid — action shortcuts', () => {
     it('runs an action for its shortcut with the selected ids', async () => {
         const user = userEvent.setup();
@@ -395,7 +432,7 @@ describe('useGrid — right-click', () => {
         const { result } = renderHook(() =>
             useGrid({
                 id: 'x',
-                rowIds: [1, 2],
+                ...byIds([1, 2]),
                 actions: [action('Neu'), action('Bearbeiten', { when: ['one'] })],
                 defaultSelectedIds: [2],
             }),

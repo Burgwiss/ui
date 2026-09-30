@@ -32,7 +32,8 @@ export default tseslint.config(
     },
     {
         files: ['src/**/*.{ts,tsx}'],
-        ignores: ['src/**/*.stories.tsx', 'src/**/*.test.tsx'],
+        // Example content lives in stories, tests and fixtures; components carry none.
+        ignores: ['src/**/*.stories.tsx', 'src/**/*.test.tsx', 'src/**/*.fixtures.{ts,tsx}'],
         rules: {
             'local/no-untranslated-jsx-text': 'error',
             'no-restricted-imports': [

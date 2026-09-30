@@ -8,14 +8,14 @@ import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '../../molec
 import { SearchField } from '../../molecules/SearchField';
 import { GridActionMenuItems, GridActions } from '../../organisms/GridActions';
 
-export interface GridPageProps {
+export interface GridPageProps<T = unknown> {
     /** Page name — rendered as a visually hidden h1 only (the app's breadcrumb names the page). */
     title: string;
     /**
-     * From `useGrid({ id, rowIds, actions, selection })`. Brings the actions,
+     * From `useGrid({ id, rows, getRowId, columns, actions, selection })`. Brings the actions,
      * the selection, the keyboard and the remembered settings.
      */
-    grid?: GridApi;
+    grid?: GridApi<T>;
     /** The toolbar's accessible name. Defaults to `title`. */
     actionsLabel?: string;
     /** Search, right. `/` jumps to it. */
@@ -57,7 +57,7 @@ export interface GridPageProps {
  *
  * @summary List-page template: table with selection toolbar, search, filter chips, context menu and footer.
  */
-export function GridPage({
+export function GridPage<T>({
     title,
     grid,
     actionsLabel,
@@ -70,7 +70,7 @@ export function GridPage({
     footer,
     offsetTop = '4rem',
     children,
-}: GridPageProps) {
+}: GridPageProps<T>) {
     const root = useRef<HTMLDivElement>(null);
     const count = grid?.selectedIds.length ?? 0;
     const menuItems = grid?.visibleActions ?? [];
@@ -88,6 +88,7 @@ export function GridPage({
 
     const body = (
         <div
+            data-grid-scroll=""
             data-density={grid?.preferences.values.density ?? 'comfortable'}
             onContextMenu={grid?.onContextMenu}
             className={cn(

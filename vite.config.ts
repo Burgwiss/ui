@@ -47,7 +47,7 @@ export default defineConfig({
             exclude: [
                 'src/**/*.stories.tsx',
                 'src/**/*.test.{ts,tsx}',
-                'src/**/*.fixtures.ts',
+                'src/**/*.fixtures.{ts,tsx}',
                 'src/pages/**',
             ],
         },
@@ -60,7 +60,26 @@ export default defineConfig({
                     globals: true,
                     setupFiles: ['./tests/setup.ts'],
                     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+                    exclude: ['src/**/*.browser.test.tsx'],
                     css: false,
+                },
+            },
+            {
+                // Layout-dependent behaviour jsdom cannot measure (sticky columns,
+                // drag resize/reorder, virtual scrolling) and screenshot
+                // comparisons, in real Chromium with the real styles.
+                extends: true,
+                test: {
+                    name: 'browser',
+                    include: ['src/**/*.browser.test.tsx'],
+                    setupFiles: ['./tests/browser-setup.ts'],
+                    browser: {
+                        enabled: true,
+                        headless: true,
+                        provider: playwright({}),
+                        viewport: { width: 1200, height: 800 },
+                        instances: [{ browser: 'chromium' }],
+                    },
                 },
             },
             {

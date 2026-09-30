@@ -30,18 +30,25 @@ function actions(onDelete = vi.fn()): GridActionItem[] {
     ];
 }
 
-const current: { api?: GridApi } = {};
-const onGrid = (grid: GridApi) => {
-    current.api = grid;
-};
+type Row = { id: number; name: string };
+const current: { api?: GridApi<Row> } = {};
 function Page({
     items = actions(),
     selected = [],
+    onGrid = (grid: GridApi<Row>) => {
+        current.api = grid;
+    },
     ...props
-}: Partial<GridPageProps> & { items?: GridActionItem[]; selected?: RowId[] }) {
+}: Partial<GridPageProps<Row>> & {
+    items?: GridActionItem[];
+    selected?: RowId[];
+    onGrid?: (grid: GridApi<Row>) => void;
+}) {
     const grid = useGrid({
         id: 'test',
-        rowIds: ROWS.map((r) => r.id),
+        rows: ROWS,
+        getRowId: (r) => r.id,
+        columns: [{ id: 'name', header: 'Name' }],
         actions: items,
         defaultSelectedIds: selected,
     });

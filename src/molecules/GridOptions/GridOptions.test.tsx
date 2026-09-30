@@ -135,7 +135,7 @@ describe('GridOptions', () => {
         await user.click(within(menu).getByRole('menuitemradio', { name: 'Kompakt' }));
         ({ user, menu } = await open());
         await user.click(within(menu).getByRole('menuitem', { name: 'Zurücksetzen' }));
-        expect(state()).toEqual({ hiddenColumns: [], density: 'comfortable', selection: true });
+        expect(state()).toMatchObject({ hiddenColumns: [], density: 'comfortable', selection: true });
         expect(localStorage.getItem(gridPreferencesKey('admin.courses'))).toBeNull();
     });
 

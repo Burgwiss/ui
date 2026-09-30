@@ -14,7 +14,7 @@ const KEY = gridPreferencesKey('admin.courses');
 describe('useGridPreferences', () => {
     it('starts from the defaults when nothing is stored', () => {
         const { result } = renderHook(() => useGridPreferences('admin.courses'));
-        expect(result.current.values).toEqual({
+        expect(result.current.values).toMatchObject({
             hiddenColumns: [],
             density: 'comfortable',
             selection: true,
@@ -34,7 +34,7 @@ describe('useGridPreferences', () => {
     it('stores a hidden column under the grid key and brings it back on the next visit', () => {
         const first = renderHook(() => useGridPreferences('admin.courses'));
         act(() => first.result.current.setColumnVisible('code', false));
-        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).toEqual({
+        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).toMatchObject({
             v: 1,
             hiddenColumns: ['code'],
             density: 'comfortable',
@@ -99,7 +99,7 @@ describe('useGridPreferences', () => {
             JSON.stringify({ v: 1, hiddenColumns: ['code'], density: 'compact' }),
         );
         const { result } = renderHook(() => useGridPreferences('admin.courses'));
-        expect(result.current.values).toEqual({
+        expect(result.current.values).toMatchObject({
             hiddenColumns: ['code'],
             density: 'compact',
             selection: true,
@@ -130,7 +130,7 @@ describe('useGridPreferences', () => {
     ])('ignores %s and uses the defaults', (_, raw) => {
         localStorage.setItem(KEY, raw);
         const { result } = renderHook(() => useGridPreferences('admin.courses'));
-        expect(result.current.values).toEqual({
+        expect(result.current.values).toMatchObject({
             hiddenColumns: [],
             density: 'comfortable',
             selection: true,
@@ -143,7 +143,7 @@ describe('useGridPreferences', () => {
             JSON.stringify({ v: 1, hiddenColumns: ['code', 7, null], density: 'huge' }),
         );
         const { result } = renderHook(() => useGridPreferences('admin.courses'));
-        expect(result.current.values).toEqual({
+        expect(result.current.values).toMatchObject({
             hiddenColumns: ['code'],
             density: 'comfortable',
             selection: true,

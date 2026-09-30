@@ -1,5 +1,6 @@
 // @burgwiss/ui — public API. Ordered by atomic level.
 export { cn } from './lib/cn';
+export { downloadText } from './lib/download';
 export {
     formatFileSize,
     MESSAGE_ATTACHMENT_MAX_MB,
@@ -50,8 +51,11 @@ export * from './molecules/DropdownMenu';
 export * from './molecules/EmptyState';
 export * from './molecules/EntitySearchPicker';
 export * from './molecules/GridColumnFilter';
+export * from './molecules/GridFilterChips';
+export * from './molecules/GridFilterEditor';
 export * from './molecules/GridFooter';
 export * from './molecules/GridOptions';
+export * from './molecules/GridViewsMenu';
 export * from './molecules/ImageAdjustDialog';
 export * from './molecules/Popover';
 export * from './molecules/SearchField';
@@ -65,6 +69,7 @@ export * from './molecules/Tabs';
 export * from './organisms/AppRail';
 export * from './organisms/ChatComposer';
 export * from './organisms/Conversation';
+export * from './organisms/DataGrid';
 export * from './organisms/GridActions';
 export * from './organisms/LiveCanvas';
 export * from './organisms/MessageList';
@@ -76,6 +81,7 @@ export * from './organisms/ThreadList';
 export * from './organisms/VideoPlayer';
 
 // Templates — page layouts with slots; no data of their own.
+export * from './templates/AdminLayout';
 export * from './templates/ChatPage';
 export * from './templates/GridPage';
 export * from './templates/SidebarLayout';
