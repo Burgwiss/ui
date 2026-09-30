@@ -36,7 +36,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { Badge } from '../../atoms/Badge';
 import { Button } from '../../atoms/Button';
@@ -2578,7 +2578,11 @@ export const AufnahmenAlsTabelle: StoryObj<typeof LivePage> = {
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await userEvent.click(canvas.getByRole('radio', { name: 'Tabelle' }));
-        await expect(canvas.getByRole('table')).toBeInTheDocument();
+        await waitFor(() =>
+            expect(canvasElement.querySelectorAll('tr[data-grid-row-id]').length).toBeGreaterThan(
+                0,
+            ),
+        );
     },
 };
 
@@ -2588,7 +2592,11 @@ export const SitzungenAlsTabelle: StoryObj<typeof LivePage> = {
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
         await userEvent.click(canvas.getByRole('radio', { name: 'Tabelle' }));
-        await expect(canvas.getByRole('table')).toBeInTheDocument();
+        await waitFor(() =>
+            expect(canvasElement.querySelectorAll('tr[data-grid-row-id]').length).toBeGreaterThan(
+                0,
+            ),
+        );
     },
 };
 
