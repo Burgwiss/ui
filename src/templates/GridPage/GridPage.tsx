@@ -18,7 +18,7 @@ export interface GridPageProps<T = unknown> {
     grid?: GridApi<T>;
     /** The toolbar's accessible name. Defaults to `title`. */
     actionsLabel?: string;
-    /** Search, right. `/` jumps to it. */
+    /** Search, right: a magnifier that slides open when clicked or when `/` jumps to it. */
     search?: { value: string; onChange: (value: string) => void; placeholder: string };
     /** Text for the "✕ 3 ausgewählt" part of the toolbar. */
     selectionLabels?: { count: (count: number) => string; clear: string };
@@ -47,7 +47,7 @@ export interface GridPageProps<T = unknown> {
  *
  * How every list page looks and behaves:
  *
- *   [✕ 3 ausgewählt | actions for this selection] ····· [search] [⋮]
+ *   [✕ 3 ausgewählt | actions for this selection] ····· [🔍] [⋮]
  *   [active filter chips]
  *   [the grid — header pinned, lines between columns, right-click menu]
  *   [count ·························· pager]
@@ -148,7 +148,7 @@ export function GridPage<T>({
                 <div className="ml-auto flex items-center gap-1">
                     {search && (
                         <SearchField
-                            className="w-72"
+                            collapsible
                             value={search.value}
                             onValueChange={search.onChange}
                             placeholder={search.placeholder}

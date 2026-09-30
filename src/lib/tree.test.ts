@@ -1,0 +1,251 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+    canMove,
+    descendantIds,
+    findNode,
+    flattenVisible,
+    indentNode,
+    insertNode,
+    locate,
+    moveNode,
+    moveSibling,
+    outdentNode,
+    pathTo,
+    removeNode,
+    renameNode,
+    type TreeNode,
+} from './tree';
+
+/*
+ *  arabisch
+ *    grund
+ *    aufbau
+ *  koran
+ *    tajwid
+ *      regeln
+ *  kunst
+ */
+const TREE: TreeNode[] = [
+    {
+        id: 'arabisch',
+        label: 'Arabisch',
+        children: [
+            { id: 'grund', label: 'Grundstufe' },
+            { id: 'aufbau', label: 'Aufbaustufe' },
+        ],
+    },
+    {
+        id: 'koran',
+        label: 'Koran',
+        children: [
+            { id: 'tajwid', label: 'Tajwid', children: [{ id: 'regeln', label: 'Regeln' }] },
+        ],
+    },
+    { id: 'kunst', label: 'Kunst' },
+];
+
+/** The tree as `id(child,child)` — compact enough to compare whole shapes. */
+function shape(nodes: TreeNode[]): string {
+    return nodes
+        .map((n) => (n.children?.length ? `${n.id}(${shape(n.children)})` : n.id))
+        .join(',');
+}
+
+describe('reading a tree', () => {
+    it('finds a node at any depth, or null', () => {
+        expect(findNode(TREE, 'regeln')?.label).toBe('Regeln');
+        expect(findNode(TREE, 'kunst')?.label).toBe('Kunst');
+        expect(findNode(TREE, 'nope')).toBeNull();
+    });
+
+    it('locates a node: its parent, its index and its siblings', () => {
+        expect(locate(TREE, 'aufbau')).toMatchObject({ parentId: 'arabisch', index: 1 });
+        expect(locate(TREE, 'aufbau')?.siblings.map((n) => n.id)).toEqual(['grund', 'aufbau']);
+        expect(locate(TREE, 'kunst')).toMatchObject({ parentId: null, index: 2 });
+        expect(locate(TREE, 'nope')).toBeNull();
+    });
+
+    it('gives the path from the root down to a node', () => {
+        expect(pathTo(TREE, 'regeln').map((n) => n.label)).toEqual(['Koran', 'Tajwid', 'Regeln']);
+        expect(pathTo(TREE, 'kunst').map((n) => n.id)).toEqual(['kunst']);
+        expect(pathTo(TREE, 'nope')).toEqual([]);
+    });
+
+    it('lists a node and everything under it', () => {
+        expect(descendantIds(TREE, 'koran')).toEqual(['koran', 'tajwid', 'regeln']);
+        expect(descendantIds(TREE, 'kunst')).toEqual(['kunst']);
+        expect(descendantIds(TREE, 'nope')).toEqual([]);
+    });
+});
+
+describe('flattenVisible', () => {
+    it('lists only the top level while nothing is expanded', () => {
+        const lines = flattenVisible(TREE, new Set());
+        expect(lines.map((l) => l.node.id)).toEqual(['arabisch', 'koran', 'kunst']);
+        expect(lines[0]).toMatchObject({
+            level: 1,
+            parentId: null,
+            posInSet: 1,
+            setSize: 3,
+            hasChildren: true,
+            expanded: false,
+        });
+        expect(lines[2]).toMatchObject({ hasChildren: false, expanded: false, posInSet: 3 });
+    });
+
+    it('opens expanded nodes in order, with level, position and set size', () => {
+        const lines = flattenVisible(TREE, new Set(['koran', 'tajwid']));
+        expect(lines.map((l) => `${l.node.id}@${l.level}`)).toEqual([
+            'arabisch@1',
+            'koran@1',
+            'tajwid@2',
+            'regeln@3',
+            'kunst@1',
+        ]);
+        expect(lines[2]).toMatchObject({ parentId: 'koran', posInSet: 1, setSize: 1 });
+        expect(lines[3]).toMatchObject({ parentId: 'tajwid', level: 3 });
+    });
+
+    it('hides the children of a collapsed parent even when they are marked expanded', () => {
+        const lines = flattenVisible(TREE, new Set(['tajwid']));
+        expect(lines.map((l) => l.node.id)).not.toContain('regeln');
+    });
+
+    it('treats an empty children array as a leaf', () => {
+        const lines = flattenVisible([{ id: 'a', label: 'A', children: [] }], new Set(['a']));
+        expect(lines[0]).toMatchObject({ hasChildren: false, expanded: false });
+    });
+});
+
+describe('changing a tree', () => {
+    it('never mutates the tree it was given', () => {
+        const before = JSON.stringify(TREE);
+        insertNode(TREE, 'koran', { id: 'x', label: 'X' });
+        removeNode(TREE, 'tajwid');
+        renameNode(TREE, 'grund', 'Anfänger');
+        moveNode(TREE, 'kunst', 'arabisch', 0);
+        expect(JSON.stringify(TREE)).toBe(before);
+    });
+
+    it('inserts at the root or under a parent, at the end by default', () => {
+        expect(shape(insertNode(TREE, null, { id: 'x', label: 'X' }))).toBe(
+            'arabisch(grund,aufbau),koran(tajwid(regeln)),kunst,x',
+        );
+        expect(shape(insertNode(TREE, 'kunst', { id: 'x', label: 'X' }))).toBe(
+            'arabisch(grund,aufbau),koran(tajwid(regeln)),kunst(x)',
+        );
+        expect(shape(insertNode(TREE, 'arabisch', { id: 'x', label: 'X' }, 1))).toBe(
+            'arabisch(grund,x,aufbau),koran(tajwid(regeln)),kunst',
+        );
+    });
+
+    it('clamps an insert index to the list', () => {
+        expect(shape(insertNode(TREE, 'arabisch', { id: 'x', label: 'X' }, 99))).toBe(
+            'arabisch(grund,aufbau,x),koran(tajwid(regeln)),kunst',
+        );
+        expect(shape(insertNode(TREE, 'arabisch', { id: 'x', label: 'X' }, -3))).toBe(
+            'arabisch(x,grund,aufbau),koran(tajwid(regeln)),kunst',
+        );
+    });
+
+    it('does nothing when inserting under a parent that does not exist', () => {
+        expect(shape(insertNode(TREE, 'nope', { id: 'x', label: 'X' }))).toBe(shape(TREE));
+    });
+
+    it('removes a node with everything under it', () => {
+        expect(shape(removeNode(TREE, 'tajwid'))).toBe('arabisch(grund,aufbau),koran,kunst');
+        expect(shape(removeNode(TREE, 'arabisch'))).toBe('koran(tajwid(regeln)),kunst');
+        expect(shape(removeNode(TREE, 'nope'))).toBe(shape(TREE));
+    });
+
+    it('renames only the node asked for', () => {
+        const next = renameNode(TREE, 'regeln', 'Makharij');
+        expect(findNode(next, 'regeln')?.label).toBe('Makharij');
+        expect(findNode(next, 'tajwid')?.label).toBe('Tajwid');
+    });
+});
+
+describe('moveNode', () => {
+    it('moves a node, with its children, under another parent', () => {
+        expect(shape(moveNode(TREE, 'tajwid', 'arabisch', 0))).toBe(
+            'arabisch(tajwid(regeln),grund,aufbau),koran,kunst',
+        );
+    });
+
+    it('moves to the root', () => {
+        expect(shape(moveNode(TREE, 'grund', null, 0))).toBe(
+            'grund,arabisch(aufbau),koran(tajwid(regeln)),kunst',
+        );
+    });
+
+    it('reads the index as a position among the destination siblings as they are now', () => {
+        // Down within the same list: "before kunst" is index 2 before the move.
+        expect(shape(moveNode(TREE, 'arabisch', null, 2))).toBe(
+            'koran(tajwid(regeln)),arabisch(grund,aufbau),kunst',
+        );
+        expect(shape(moveNode(TREE, 'arabisch', null, 3))).toBe(
+            'koran(tajwid(regeln)),kunst,arabisch(grund,aufbau)',
+        );
+        // Up within the same list.
+        expect(shape(moveNode(TREE, 'kunst', null, 0))).toBe(
+            'kunst,arabisch(grund,aufbau),koran(tajwid(regeln))',
+        );
+    });
+
+    it('leaves the tree as it is for a move onto the same place', () => {
+        expect(shape(moveNode(TREE, 'koran', null, 1))).toBe(shape(TREE));
+        expect(shape(moveNode(TREE, 'koran', null, 2))).toBe(shape(TREE));
+    });
+
+    it('refuses to move a node into itself or anything under it', () => {
+        expect(canMove(TREE, 'koran', 'koran')).toBe(false);
+        expect(canMove(TREE, 'koran', 'regeln')).toBe(false);
+        expect(canMove(TREE, 'koran', 'arabisch')).toBe(true);
+        expect(canMove(TREE, 'regeln', null)).toBe(true);
+        expect(canMove(TREE, 'nope', null)).toBe(false);
+        expect(canMove(TREE, 'kunst', 'nope')).toBe(false);
+        expect(shape(moveNode(TREE, 'koran', 'regeln', 0))).toBe(shape(TREE));
+        expect(shape(moveNode(TREE, 'koran', 'koran', 0))).toBe(shape(TREE));
+    });
+});
+
+describe('keyboard moves', () => {
+    it('moves up and down among siblings, stopping at the ends', () => {
+        expect(shape(moveSibling(TREE, 'aufbau', -1))).toBe(
+            'arabisch(aufbau,grund),koran(tajwid(regeln)),kunst',
+        );
+        expect(shape(moveSibling(TREE, 'arabisch', 1))).toBe(
+            'koran(tajwid(regeln)),arabisch(grund,aufbau),kunst',
+        );
+        expect(shape(moveSibling(TREE, 'grund', -1))).toBe(shape(TREE));
+        expect(shape(moveSibling(TREE, 'kunst', 1))).toBe(shape(TREE));
+    });
+
+    it('indents into the sibling above, as its last child', () => {
+        expect(shape(indentNode(TREE, 'koran'))).toBe(
+            'arabisch(grund,aufbau,koran(tajwid(regeln))),kunst',
+        );
+        expect(shape(indentNode(TREE, 'kunst'))).toBe(
+            'arabisch(grund,aufbau),koran(tajwid(regeln),kunst)',
+        );
+    });
+
+    it('cannot indent the first of its siblings', () => {
+        expect(shape(indentNode(TREE, 'arabisch'))).toBe(shape(TREE));
+        expect(shape(indentNode(TREE, 'grund'))).toBe(shape(TREE));
+    });
+
+    it('outdents to just after its parent', () => {
+        expect(shape(outdentNode(TREE, 'grund'))).toBe(
+            'arabisch(aufbau),grund,koran(tajwid(regeln)),kunst',
+        );
+        expect(shape(outdentNode(TREE, 'regeln'))).toBe(
+            'arabisch(grund,aufbau),koran(tajwid,regeln),kunst',
+        );
+    });
+
+    it('cannot outdent a top-level node', () => {
+        expect(shape(outdentNode(TREE, 'kunst'))).toBe(shape(TREE));
+    });
+});

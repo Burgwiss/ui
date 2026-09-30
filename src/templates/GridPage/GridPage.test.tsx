@@ -128,8 +128,11 @@ describe('GridPage', () => {
         const user = userEvent.setup();
         render(<Page />);
         screen.getByText('Eins').closest('tr')?.focus();
+        expect(screen.getByRole('searchbox').parentElement).not.toHaveAttribute('data-expanded');
         await user.keyboard('/');
         expect(screen.getByRole('searchbox')).toHaveFocus();
+        // The search waits as a magnifier and opens when it is used.
+        expect(screen.getByRole('searchbox').parentElement).toHaveAttribute('data-expanded');
     });
 
     it('opens the same actions on right-click, for the row under the pointer', async () => {

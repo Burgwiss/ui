@@ -1,6 +1,7 @@
 // @burgwiss/ui — public API. Ordered by atomic level.
 export { cn } from './lib/cn';
 export { downloadText } from './lib/download';
+export * from './lib/tree';
 export {
     formatFileSize,
     MESSAGE_ATTACHMENT_MAX_MB,
@@ -54,7 +55,6 @@ export * from './molecules/GridFilterChips';
 export * from './molecules/GridFilterEditor';
 export * from './molecules/GridFooter';
 export * from './molecules/GridOptions';
-export * from './molecules/GridViewsMenu';
 export * from './molecules/ImageAdjustDialog';
 export * from './molecules/Popover';
 export * from './molecules/SearchField';
@@ -66,6 +66,7 @@ export * from './molecules/Tabs';
 
 // Organisms — a region of the screen: a nav bar, a table, a toolbar.
 export * from './organisms/AppRail';
+export * from './organisms/CategoryTree';
 export * from './organisms/ChatComposer';
 export * from './organisms/Conversation';
 export * from './organisms/DataGrid';

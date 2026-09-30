@@ -1,7 +1,9 @@
 import type { GridColumn } from '../../hooks/grid/types';
+import { flattenVisible, pathTo, type TreeNode } from '../../lib/tree';
+import { COURSE_CATEGORIES } from '../CategoryTree/CategoryTree.fixtures';
 import type { GridFilterChipsLabels } from '../../molecules/GridFilterChips';
 import type { GridFilterEditorLabels } from '../../molecules/GridFilterEditor';
-import type { GridViewsMenuLabels } from '../../molecules/GridViewsMenu';
+import type { GridViewsLabels } from '../../molecules/GridOptions';
 import type { DataGridLabels } from './DataGrid';
 
 /*
@@ -76,7 +78,7 @@ export const FILTER_CHIPS_LABELS: GridFilterChipsLabels = {
     max: (h, v) => `${h} bis ${v}`,
 };
 
-export const VIEWS_LABELS: GridViewsMenuLabels = {
+export const VIEWS_LABELS: GridViewsLabels = {
     trigger: 'Ansichten',
     save: 'Aktuelle Ansicht speichern …',
     saveTitle: 'Ansicht speichern',
@@ -95,27 +97,25 @@ export const VIEWS_LABELS: GridViewsMenuLabels = {
     closeLabel: 'Schließen',
 };
 
-export type Offering = {
-    id: string;
-    label: string;
-    starts: string;
-    place: string;
-    seats: number;
-    enrolled: number;
-};
-
 export type CourseRow = {
     id: number;
     title: string;
+    /** Where the course sits in the category tree; null for none. */
+    categoryId: string | null;
+    /** The category's path, e.g. "Arabisch › Grundstufe" — what the grid shows, sorts and groups by. */
     category: string | null;
-    level: string;
     status: 'published' | 'draft' | 'archived';
     price: number | null;
     starts: string | null;
     enrolled: number;
     teacher: string;
-    offerings: Offering[];
 };
+
+/** "Arabisch › Grundstufe" for a category id, from whatever the tree looks like now. */
+export function categoryPath(tree: TreeNode[], id: string | null): string | null {
+    const path = id ? pathTo(tree, id) : [];
+    return path.length ? path.map((n) => n.label).join(' › ') : null;
+}
 
 export const STATUS_LABEL: Record<CourseRow['status'], string> = {
     published: 'Veröffentlicht',
@@ -132,23 +132,23 @@ const date = new Intl.DateTimeFormat('de-DE', {
 export const formatEuro = (n: number) => euro.format(n);
 export const formatDate = (iso: string) => date.format(new Date(`${iso}T00:00:00`));
 
-const TITLES: [string, string | null, string][] = [
-    ['Arabisch für Anfänger', 'Sprachen', 'A1'],
-    ['Arabisch Aufbaukurs', 'Sprachen', 'A2'],
-    ['Tajweed Grundlagen', 'Religion', 'A1'],
-    ['Sira — Das Leben des Propheten', 'Geschichte', 'B1'],
-    ['Kalligrafie-Werkstatt', 'Kunst', 'A1'],
-    ['Medina Buch 1', 'Sprachen', 'A1'],
-    ['Fiqh des Alltags', 'Religion', 'B1'],
-    ['Hadith-Wissenschaften', 'Religion', 'C1'],
-    ['Arabische Grammatik intensiv', 'Sprachen', 'B2'],
-    ['Islamische Kunstgeschichte', 'Kunst', 'B1'],
-    ['Koran-Rezitation für Kinder', 'Religion', 'A1'],
-    ['Andalusien — Eine Reise', 'Geschichte', 'A2'],
-    ['Offene Sprechstunde', null, 'A1'],
+const TITLES: [string, string | null][] = [
+    ['Arabisch für Anfänger', 'arabisch-grundstufe'],
+    ['Arabisch Aufbaukurs', 'arabisch-aufbaustufe'],
+    ['Tajwid Grundlagen', 'koran-tajwid'],
+    ['Sira — Das Leben des Propheten', 'sira'],
+    ['Kalligrafie-Werkstatt', 'kunst'],
+    ['Medina-Buch 1', 'arabisch-grundstufe'],
+    ['Fiqh des Alltags', 'fiqh'],
+    ['Einführung in die Hadithwissenschaften', 'hadith'],
+    ['Arabische Grammatik intensiv', 'arabisch-grammatik'],
+    ['Islamische Kunstgeschichte', 'kunst'],
+    ['Koranrezitation für Kinder', 'kinder'],
+    ['Hifz-Kreis: Juz ʿAmma', 'koran-hifz'],
+    ['Andalusien — eine Reise', 'sira'],
+    ['Offene Sprechstunde', null],
 ];
 const TEACHERS = ['Frau Berger', 'Herr Yılmaz', 'Frau Haddad', 'Herr Okafor'];
-const PLACES = ['Online', 'Raum 2', 'Moschee Süd', 'Online'];
 const STATUSES: CourseRow['status'][] = [
     'published',
     'published',
@@ -160,15 +160,15 @@ const STATUSES: CourseRow['status'][] = [
 /** Deterministic example courses — the same every render, so screenshots stay stable. */
 export function makeCourses(count = TITLES.length): CourseRow[] {
     return Array.from({ length: count }, (_, i) => {
-        const [title, category, level] = TITLES[i % TITLES.length]!;
+        const [title, categoryId] = TITLES[i % TITLES.length]!;
         const n = Math.floor(i / TITLES.length);
         const day = 1 + ((i * 7) % 27);
         const month = 9 + (i % 4);
         return {
             id: i + 1,
             title: n ? `${title} (${n + 1})` : title,
-            category,
-            level,
+            categoryId,
+            category: categoryPath(COURSE_CATEGORIES, categoryId),
             status: STATUSES[i % STATUSES.length]!,
             price: i % 6 === 4 ? null : 60 + ((i * 30) % 150),
             starts:
@@ -177,33 +177,39 @@ export function makeCourses(count = TITLES.length): CourseRow[] {
                     : `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
             enrolled: (i * 7) % 25,
             teacher: TEACHERS[i % TEACHERS.length]!,
-            offerings: Array.from({ length: i % 3 }, (_, k) => ({
-                id: `${i + 1}-${k + 1}`,
-                label: k === 0 ? 'Herbst 2026' : 'Frühjahr 2027',
-                starts: k === 0 ? '2026-10-05' : '2027-03-01',
-                place: PLACES[(i + k) % PLACES.length]!,
-                seats: 20,
-                enrolled: (i * 3 + k * 5) % 21,
-            })),
         };
     });
 }
 
+/** Every category as a filter choice, by its path. */
+export function categoryOptions(tree: TreeNode[]) {
+    const all = new Set(
+        tree.flatMap(function ids(n): string[] {
+            return [n.id, ...(n.children ?? []).flatMap(ids)];
+        }),
+    );
+    return flattenVisible(tree, all).map((line) => {
+        const path = categoryPath(tree, line.node.id)!;
+        return { value: path, label: path };
+    });
+}
+
 export const COURSE_COLUMNS: GridColumn<CourseRow>[] = [
-    { id: 'title', header: 'Kurs', hideable: false, width: 280, filter: { type: 'text' } },
+    {
+        id: 'title',
+        header: 'Kurs',
+        hideable: false,
+        pinned: 'left',
+        width: 280,
+        filter: { type: 'text' },
+    },
     {
         id: 'category',
         header: 'Kategorie',
+        width: 220,
         groupable: true,
-        filter: {
-            type: 'choice',
-            options: ['Sprachen', 'Religion', 'Geschichte', 'Kunst'].map((v) => ({
-                value: v,
-                label: v,
-            })),
-        },
+        filter: { type: 'choice', options: categoryOptions(COURSE_CATEGORIES) },
     },
-    { id: 'level', header: 'Niveau', width: 100, groupable: true },
     {
         id: 'status',
         header: 'Status',

@@ -1,4 +1,5 @@
 import { Columns3, EllipsisVertical, RotateCcw } from 'lucide-react';
+import { useRef } from 'react';
 
 import { Button } from '../../atoms/Button';
 import type { GridDensity, GridPreferencesApi } from '../../hooks';
@@ -16,6 +17,7 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '../DropdownMenu';
+import { GridViewsSubmenu, useGridViewsDialogs, type GridOptionsViews } from './GridViews';
 
 export interface GridOptionsColumn {
     /** Stable column id; the key under which visibility is stored and the argument to `preferences.isColumnVisible`. */
@@ -33,6 +35,12 @@ export interface GridOptionsProps {
     columns: GridOptionsColumn[];
     /** Offer the "select rows" switch. Pass `grid.allowedMode !== 'none'`. */
     canSelect?: boolean;
+    /**
+     * Saved views (from `useGridPreferences`): adds an "Ansichten" submenu at the top of the menu
+     * to switch, save, update, rename and delete them, and a dot on the ⋮ button while the setup
+     * differs from the active view. Without it the menu has no views entry.
+     */
+    views?: GridOptionsViews;
     /** All visible text of the menu, in the app's language (required). */
     labels: {
         /** The ⋮ button's name and tooltip, e.g. "Tabellenoptionen". */
@@ -53,82 +61,118 @@ export interface GridOptionsProps {
 }
 
 /**
- * The ⋮ menu at the right end of a grid toolbar: which columns show (a
- * submenu), how dense the rows are, whether rows can be selected, and a way
+ * The ⋮ menu at the right end of a grid toolbar: the saved views (an optional
+ * submenu), which columns show (a submenu), how dense the rows are, whether rows can be selected, and a way
  * back to the defaults. Every choice is remembered per grid (in localStorage under
  * `burgwiss-ui:grid:<gridId>`, so it survives a reload). It holds no state of its
- * own: pass the `preferences` object from `useGrid` (or `useGridPreferences`). For a
- * generic actions menu use `DropdownMenu`.
+ * own: pass the `preferences` object from `useGrid` (or `useGridPreferences`). Pass `views`
+ * to add the saved-views submenu; saving and renaming then ask for a name in a small dialog,
+ * deleting asks for confirmation, and focus returns to the ⋮ button afterwards. For a generic
+ * actions menu use `DropdownMenu`.
  *
- * @summary Grid toolbar options menu for column visibility, row density, row selection and reset.
+ * @summary Grid toolbar options menu for saved views, column visibility, row density, row selection and reset.
  */
-export function GridOptions({ preferences, columns, canSelect = false, labels }: GridOptionsProps) {
+export function GridOptions({
+    preferences,
+    columns,
+    canSelect = false,
+    views,
+    labels,
+}: GridOptionsProps) {
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const { request, onCloseAutoFocus, dialogs } = useGridViewsDialogs(views, triggerRef);
+
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={labels.trigger}
-                    className="text-muted-foreground"
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        ref={triggerRef}
+                        variant="ghost"
+                        size="icon"
+                        aria-label={labels.trigger}
+                        className="relative text-muted-foreground"
+                    >
+                        <EllipsisVertical aria-hidden="true" />
+                        {views?.isModified && (
+                            <span
+                                data-modified-dot=""
+                                aria-hidden="true"
+                                className="absolute top-1 right-1 size-2 rounded-full bg-primary"
+                            />
+                        )}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    className="w-56"
+                    onCloseAutoFocus={onCloseAutoFocus}
                 >
-                    <EllipsisVertical aria-hidden="true" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                        <Columns3 className="size-4 text-muted-foreground" aria-hidden="true" />
-                        {labels.columns}
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-52">
-                        {columns.map((column) => (
+                    {views && (
+                        <>
+                            <GridViewsSubmenu views={views} request={request} />
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
+                    <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                            <Columns3 className="size-4 text-muted-foreground" aria-hidden="true" />
+                            {labels.columns}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-52">
+                            {columns.map((column) => (
+                                <DropdownMenuCheckboxItem
+                                    key={column.id}
+                                    checked={preferences.isColumnVisible(column.id)}
+                                    disabled={column.hideable === false}
+                                    onCheckedChange={(visible) =>
+                                        preferences.setColumnVisible(column.id, visible === true)
+                                    }
+                                    // Keep the menu open: people hide several columns at once.
+                                    onSelect={(event) => event.preventDefault()}
+                                >
+                                    {column.label}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>{labels.density}</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                        value={preferences.values.density}
+                        onValueChange={(value) => preferences.setDensity(value as GridDensity)}
+                    >
+                        <DropdownMenuRadioItem value="comfortable">
+                            {labels.comfortable}
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="compact">
+                            {labels.compact}
+                        </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    {canSelect && (
+                        <>
+                            <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem
-                                key={column.id}
-                                checked={preferences.isColumnVisible(column.id)}
-                                disabled={column.hideable === false}
-                                onCheckedChange={(visible) =>
-                                    preferences.setColumnVisible(column.id, visible === true)
+                                checked={preferences.values.selection}
+                                onCheckedChange={(on) =>
+                                    preferences.setSelectionEnabled(on === true)
                                 }
-                                // Keep the menu open: people hide several columns at once.
-                                onSelect={(event) => event.preventDefault()}
                             >
-                                {column.label}
+                                {labels.selection}
                             </DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>{labels.density}</DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                    value={preferences.values.density}
-                    onValueChange={(value) => preferences.setDensity(value as GridDensity)}
-                >
-                    <DropdownMenuRadioItem value="comfortable">
-                        {labels.comfortable}
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="compact">{labels.compact}</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-                {canSelect && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={preferences.values.selection}
-                            onCheckedChange={(on) => preferences.setSelectionEnabled(on === true)}
-                        >
-                            {labels.selection}
-                        </DropdownMenuCheckboxItem>
-                    </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                    disabled={preferences.isDefault}
-                    onSelect={() => preferences.reset()}
-                >
-                    <RotateCcw className="size-4" aria-hidden="true" />
-                    {labels.reset}
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                        </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        disabled={preferences.isDefault}
+                        onSelect={() => preferences.reset()}
+                    >
+                        <RotateCcw className="size-4" aria-hidden="true" />
+                        {labels.reset}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {dialogs}
+        </>
     );
 }

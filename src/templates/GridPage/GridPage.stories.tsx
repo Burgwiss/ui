@@ -12,7 +12,7 @@ const meta: Meta<typeof GridPage> = {
         docs: {
             description: {
                 component:
-                    'Die Kursliste mit allem: Sortieren (Umschalt für mehrere), Spaltenmenü, Filter mit Chips, gespeicherte Ansichten, Spalten ziehen, anheften, Breite ändern, Ausführungen aufklappen, Gruppieren mit Summen, Preis direkt bearbeiten, Kopieren (Strg+C) und CSV-Export.',
+                    'Die Kursliste mit allem: Sortieren (Umschalt für mehrere), Spaltenmenü, Filter mit Chips, gespeicherte Ansichten (im ⋮-Menü), Spalten ziehen, anheften, Breite ändern, Gruppieren mit Summen, Preis direkt bearbeiten, Kopieren (Strg+C) und CSV-Export.',
             },
         },
     },
@@ -26,7 +26,7 @@ export default meta;
 
 type Story = StoryObj<typeof GridPage>;
 
-/** Everything on: click a header to sort, ⋮ on a header for its menu, ▸ to open a course's offerings. */
+/** Everything on: click a header to sort, ⋮ on a header for its menu, ⋮ at the right for views and table options. */
 export const Kursliste: Story = {
     render: () => <CourseList />,
     play: async ({ canvasElement, step }) => {
@@ -41,11 +41,9 @@ export const Kursliste: Story = {
             );
         });
 
-        await step('Open a course’s offerings', async () => {
-            const toggle = canvas.getAllByRole('button', { name: /aufklappen$/ })[0]!;
-            await userEvent.click(toggle);
-            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-            await expect(canvas.getAllByText(/^Ausführungen von/)[0]).toBeVisible();
+        await step('The course name stays pinned on the left', async () => {
+            const title = canvas.getByRole('columnheader', { name: /Kurs/ });
+            await expect(getComputedStyle(title).position).toBe('sticky');
         });
 
         await step('Filter by status from the column menu', async () => {
@@ -66,12 +64,12 @@ export const Kursliste: Story = {
     },
 };
 
-/** Grouped by category, with a count per group and summed price and enrolments. */
+/** Grouped by category path, with a count per group and summed price and enrolments. */
 export const Gruppiert: Story = {
     render: () => <CourseList gridId="storybook.kursliste.grouped" groupBy={['category']} />,
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
-        const group = canvas.getByRole('button', { name: /^Kategorie: Religion/ });
+        const group = canvas.getByRole('button', { name: /^Kategorie: Kunst & Kultur/ });
         await expect(group).toHaveAttribute('aria-expanded', 'false');
         await userEvent.click(group);
         await expect(group).toHaveAttribute('aria-expanded', 'true');

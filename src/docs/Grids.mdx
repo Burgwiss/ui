@@ -45,7 +45,7 @@ const grid = useGrid({
     isExpandable: (c) => c.offerings.length > 0,
 });
 
-<GridPage grid={grid} chips={<GridFilterChips … />} options={<><GridViewsMenu … /><GridOptions … /></>}>
+<GridPage grid={grid} chips={<GridFilterChips … />} options={<GridOptions views={…} … />}>
     <DataGrid grid={grid} labels={…} renderDetail={(c) => <Offerings course={c} />}
         renderFilter={(col, close) => <GridFilterEditor … />} loading={loading} error={error} />
 </GridPage>
@@ -99,10 +99,10 @@ steht die gemerkte Sortierung in `grid.query`. Gruppieren gibt es nur im Browser
 
 ## Gespeicherte Ansichten
 
-**Ansichten** (Menü neben der Suche) speichern Filter, Sortierung, Gruppen,
+**Ansichten** (ganz oben im ⋮-Menü der Tabelle, `GridOptions` mit `views`) speichern Filter, Sortierung, Gruppen,
 Spalten und Zeilenhöhe unter einem Namen, z. B. „Entwürfe dieser Woche". Die
 aktive Ansicht kommt beim nächsten Besuch zurück — mit ihren Filtern. Weicht die
-Tabelle ab, zeigt ein Punkt „geändert"; „Ansicht aktualisieren" überschreibt sie.
+Tabelle ab, zeigt der ⋮-Knopf einen Punkt und der Eintrag „geändert"; „Ansicht aktualisieren" überschreibt sie.
 Filter ohne Ansicht werden nicht gemerkt: ein Filter, an den sich niemand
 erinnert, versteckt Zeilen.
 
@@ -120,7 +120,6 @@ Jede Aktion sagt in `when`, wann sie gilt. Ohne `when` gilt `['none']`.
 Die Werkzeugleiste zeigt **nur Icon-Buttons**, jeder mit Tooltip samt Kürzel.
 Die Hauptaktion (`tone: 'primary'`) ist gefüllt, bleibt aber ein Icon. Leere
 Gruppen fallen samt Trennstrich weg.
-
 
 ## Auswahl
 

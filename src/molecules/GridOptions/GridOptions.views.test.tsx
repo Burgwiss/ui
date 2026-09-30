@@ -1,11 +1,15 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useGridPreferences } from '../../hooks';
 import type { GridView } from '../../hooks/useGridPreferences';
-import { GridViewsMenu, type GridViewsMenuProps } from './GridViewsMenu';
+import { GridOptions } from './GridOptions';
+import type { GridOptionsViews, GridViewsLabels } from './GridViews';
 
-const LABELS: GridViewsMenuProps['labels'] = {
+afterEach(() => localStorage.clear());
+
+const LABELS: GridViewsLabels = {
     trigger: 'Ansichten',
     save: 'Aktuelle Ansicht speichern …',
     saveTitle: 'Ansicht speichern',
@@ -25,12 +29,36 @@ const LABELS: GridViewsMenuProps['labels'] = {
     closeLabel: 'Schließen',
 };
 
+const OPTION_LABELS = {
+    trigger: 'Tabellenoptionen',
+    columns: 'Spalten',
+    density: 'Zeilenhöhe',
+    comfortable: 'Bequem',
+    compact: 'Kompakt',
+    selection: 'Zeilen auswählen',
+    reset: 'Zurücksetzen',
+};
+
 const VIEWS: GridView[] = [
     { id: 'v1', name: 'Unbezahlt diesen Monat', state: {} },
     { id: 'v2', name: 'Nur Arabisch', state: {} },
 ];
 
-function setup(props: Partial<GridViewsMenuProps> = {}) {
+type ViewsProps = Partial<Omit<GridOptionsViews, 'labels'>>;
+
+function Harness({ views }: { views?: GridOptionsViews }) {
+    const prefs = useGridPreferences('views.test');
+    return (
+        <GridOptions
+            preferences={prefs}
+            columns={[{ id: 'title', label: 'Kurs', hideable: false }]}
+            labels={OPTION_LABELS}
+            views={views}
+        />
+    );
+}
+
+function setup(props: ViewsProps = {}) {
     const handlers = {
         onApply: vi.fn(),
         onSave: vi.fn(),
@@ -40,73 +68,141 @@ function setup(props: Partial<GridViewsMenuProps> = {}) {
     };
     const user = userEvent.setup();
     render(
-        <GridViewsMenu
-            views={VIEWS}
-            activeViewId={null}
-            isModified={false}
-            labels={LABELS}
-            {...handlers}
-            {...props}
+        <Harness
+            views={{
+                views: VIEWS,
+                activeViewId: null,
+                isModified: false,
+                labels: LABELS,
+                ...handlers,
+                ...props,
+            }}
         />,
     );
     return { ...handlers, user };
 }
 
-const trigger = () => screen.getByRole('button', { name: /Ansichten|Unbezahlt|Nur Arabisch/ });
+type User = ReturnType<typeof userEvent.setup>;
 
-async function openMenu(user: ReturnType<typeof userEvent.setup>) {
+const trigger = () => screen.getByRole('button', { name: 'Tabellenoptionen' });
+
+/** The "Ansichten" entry of the ⋮ menu; its name also carries the active view and "geändert". */
+const viewsEntry = (menu: HTMLElement) =>
+    within(menu).getByRole('menuitem', { name: /^Ansichten/ });
+
+/**
+ * Opens ⋮, then the "Ansichten" submenu by keyboard (→). Pointer moves into a submenu rely on
+ * layout (Radix's pointer-grace triangle), which jsdom does not have.
+ */
+async function openMenu(user: User) {
     await user.click(trigger());
-    return screen.findByRole('menu');
+    const root = await screen.findByRole('menu');
+    viewsEntry(root).focus();
+    await user.keyboard('{ArrowRight}');
+    const menus = await screen.findAllByRole('menu');
+    return menus[menus.length - 1] as HTMLElement;
 }
 
-/** Opens the menu and chooses the item by its accessible name. */
-async function choose(user: ReturnType<typeof userEvent.setup>, name: string | RegExp) {
+/** Opens the submenu and chooses the item by its accessible name. */
+async function choose(user: User, name: string | RegExp) {
     const menu = await openMenu(user);
     await user.click(within(menu).getByRole('menuitem', { name }));
 }
 
-describe('GridViewsMenu — trigger', () => {
-    it('shows the generic label when no view is active', () => {
-        setup();
-        expect(trigger()).toHaveAccessibleName('Ansichten');
-        expect(trigger()).toHaveAttribute('aria-haspopup', 'menu');
-    });
-
-    it('shows the active view name instead', () => {
-        setup({ activeViewId: 'v2' });
-        expect(trigger()).toHaveAccessibleName('Nur Arabisch');
-    });
-
-    it('falls back to the generic label when the active id is unknown', () => {
-        setup({ activeViewId: 'gone' });
-        expect(trigger()).toHaveAccessibleName('Ansichten');
-    });
-
-    it('has no "geändert" marker while unmodified', () => {
+describe('GridOptions views — the ⋮ button', () => {
+    it('shows no dot while the setup matches the view', () => {
         setup({ activeViewId: 'v1' });
-        expect(trigger()).toHaveAccessibleName('Unbezahlt diesen Monat');
+        expect(trigger().querySelector('[data-modified-dot]')).toBeNull();
     });
 
-    it('announces "geändert" when the setup differs from the view', () => {
+    it('shows a dot when the setup differs from the view', () => {
         setup({ activeViewId: 'v1', isModified: true });
-        expect(trigger()).toHaveAccessibleName('Unbezahlt diesen Monat geändert');
+        expect(trigger().querySelector('[data-modified-dot]')).not.toBeNull();
     });
 
-    it('hides the dot itself from assistive tech', () => {
+    it('shows the dot when modified even with no active view', () => {
+        setup({ activeViewId: null, isModified: true });
+        expect(trigger().querySelector('[data-modified-dot]')).not.toBeNull();
+    });
+
+    it('hides the dot from assistive tech and keeps the button name unchanged', () => {
         setup({ activeViewId: 'v1', isModified: true });
         expect(trigger().querySelector('[data-modified-dot]')).toHaveAttribute(
             'aria-hidden',
             'true',
         );
-    });
-
-    it('marks a modified setup even when no view is active', () => {
-        setup({ activeViewId: null, isModified: true });
-        expect(trigger()).toHaveAccessibleName('Ansichten geändert');
+        expect(trigger()).toHaveAccessibleName('Tabellenoptionen');
     });
 });
 
-describe('GridViewsMenu — menu', () => {
+describe('GridOptions views — the "Ansichten" entry', () => {
+    it('opens a submenu, and is the first entry of the ⋮ menu', async () => {
+        const { user } = setup();
+        await user.click(trigger());
+        const root = await screen.findByRole('menu');
+        const entries = within(root).getAllByRole('menuitem');
+        expect(entries[0]).toHaveAccessibleName('Ansichten');
+        expect(entries[0]).toHaveAttribute('aria-haspopup', 'menu');
+        expect(entries[1]).toHaveAccessibleName('Spalten');
+    });
+
+    it('is absent when GridOptions gets no views', async () => {
+        const user = userEvent.setup();
+        render(<Harness />);
+        expect(trigger().querySelector('[data-modified-dot]')).toBeNull();
+        await user.click(trigger());
+        const root = await screen.findByRole('menu');
+        expect(within(root).queryByRole('menuitem', { name: /Ansichten/ })).toBeNull();
+        expect(within(root).getAllByRole('menuitem')[0]).toHaveAccessibleName('Spalten');
+    });
+
+    it('shows just the generic label when no view is active', async () => {
+        const { user } = setup();
+        await user.click(trigger());
+        expect(viewsEntry(await screen.findByRole('menu'))).toHaveAccessibleName('Ansichten');
+    });
+
+    it('shows the active view name, muted, after the label', async () => {
+        const { user } = setup({ activeViewId: 'v2' });
+        await user.click(trigger());
+        const entry = viewsEntry(await screen.findByRole('menu'));
+        expect(entry).toHaveAccessibleName('Ansichten Nur Arabisch');
+        expect(within(entry).getByText('Nur Arabisch')).toHaveClass('text-muted-foreground');
+        expect(within(entry).getByText('Nur Arabisch')).toHaveClass('truncate');
+    });
+
+    it('falls back to the generic label when the active id is unknown', async () => {
+        const { user } = setup({ activeViewId: 'gone' });
+        await user.click(trigger());
+        expect(viewsEntry(await screen.findByRole('menu'))).toHaveAccessibleName('Ansichten');
+    });
+
+    it('has no "geändert" marker while unmodified', async () => {
+        const { user } = setup({ activeViewId: 'v1' });
+        await user.click(trigger());
+        const entry = viewsEntry(await screen.findByRole('menu'));
+        expect(entry).toHaveAccessibleName('Ansichten Unbezahlt diesen Monat');
+        expect(entry).not.toHaveTextContent('geändert');
+    });
+
+    it('announces "geändert" when the setup differs from the view', async () => {
+        const { user } = setup({ activeViewId: 'v1', isModified: true });
+        await user.click(trigger());
+        const entry = viewsEntry(await screen.findByRole('menu'));
+        expect(entry).toHaveAccessibleName('Ansichten Unbezahlt diesen Monat geändert');
+        expect(entry.querySelector('[data-modified-dot]')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('marks a modified setup even when no view is active', async () => {
+        const { user } = setup({ activeViewId: null, isModified: true });
+        await user.click(trigger());
+        expect(viewsEntry(await screen.findByRole('menu'))).toHaveAccessibleName(
+            'Ansichten geändert',
+        );
+    });
+});
+
+describe('GridOptions views — submenu', () => {
     it('lists the views as radio items, none checked without an active view', async () => {
         const { user } = setup();
         const menu = await openMenu(user);
@@ -145,13 +241,40 @@ describe('GridViewsMenu — menu', () => {
         expect(onApply).toHaveBeenCalledExactlyOnceWith('v1');
     });
 
-    it('applies from the keyboard: opening focuses the first view, ArrowDown moves on', async () => {
+    it('applies from the keyboard: → opens the submenu on the first view, ArrowDown moves on', async () => {
         const { user, onApply } = setup();
         trigger().focus();
         await user.keyboard('{Enter}');
         await screen.findByRole('menu');
+        // The "Ansichten" entry is the menu's first item, so it holds focus on open.
+        await user.keyboard('{ArrowRight}');
+        await screen.findAllByRole('menu');
         await user.keyboard('{ArrowDown}{Enter}');
         expect(onApply).toHaveBeenCalledExactlyOnceWith('v2');
+    });
+
+    it('choosing a view closes the whole menu and gives focus back to the ⋮ button', async () => {
+        const { user } = setup();
+        const menu = await openMenu(user);
+        await user.click(within(menu).getByRole('menuitemradio', { name: 'Nur Arabisch' }));
+        await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+        await waitFor(() => expect(trigger()).toHaveFocus());
+    });
+
+    it('"update" closes the whole menu and gives focus back to the ⋮ button', async () => {
+        const { user } = setup({ activeViewId: 'v1', isModified: true });
+        await choose(user, 'Aktive Ansicht aktualisieren');
+        await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+        await waitFor(() => expect(trigger()).toHaveFocus());
+    });
+
+    it('opens no dialog after a plain choice like applying a view', async () => {
+        const { user } = setup();
+        const menu = await openMenu(user);
+        await user.click(within(menu).getByRole('menuitemradio', { name: 'Nur Arabisch' }));
+        await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('says so when there are no views, and still offers to save', async () => {
@@ -222,8 +345,8 @@ describe('GridViewsMenu — menu', () => {
     });
 });
 
-describe('GridViewsMenu — save', () => {
-    async function openSave(user: ReturnType<typeof userEvent.setup>) {
+describe('GridOptions views — save', () => {
+    async function openSave(user: User) {
         await choose(user, 'Aktuelle Ansicht speichern …');
         return screen.findByRole('dialog', { name: 'Ansicht speichern' });
     }
@@ -331,8 +454,8 @@ describe('GridViewsMenu — save', () => {
     });
 });
 
-describe('GridViewsMenu — rename', () => {
-    async function openRename(user: ReturnType<typeof userEvent.setup>) {
+describe('GridOptions views — rename', () => {
+    async function openRename(user: User) {
         await choose(user, 'Ansicht umbenennen …');
         return screen.findByRole('dialog', { name: 'Ansicht umbenennen' });
     }
@@ -389,8 +512,8 @@ describe('GridViewsMenu — rename', () => {
     });
 });
 
-describe('GridViewsMenu — delete', () => {
-    async function openDelete(user: ReturnType<typeof userEvent.setup>) {
+describe('GridOptions views — delete', () => {
+    async function openDelete(user: User) {
         await choose(user, 'Ansicht löschen …');
         return screen.findByRole('alertdialog');
     }

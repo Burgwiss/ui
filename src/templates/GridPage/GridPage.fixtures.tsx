@@ -21,11 +21,12 @@ import type { GridColumn } from '../../hooks/grid/types';
 import type { GridActionItem, RowId } from '../../hooks/gridActions';
 import { useGrid, type GridApi, type GridSelectionMode } from '../../hooks/useGrid';
 import { downloadText } from '../../lib/download';
+import type { TreeNode } from '../../lib/tree';
+import { COURSE_CATEGORIES } from '../../organisms/CategoryTree/CategoryTree.fixtures';
 import { GridFilterChips } from '../../molecules/GridFilterChips';
 import { GridFilterEditor } from '../../molecules/GridFilterEditor';
 import { GridFooter } from '../../molecules/GridFooter';
 import { GridOptions } from '../../molecules/GridOptions';
-import { GridViewsMenu } from '../../molecules/GridViewsMenu';
 import { DataGrid } from '../../organisms/DataGrid';
 import {
     COURSE_COLUMNS,
@@ -33,6 +34,8 @@ import {
     FILTER_CHIPS_LABELS,
     FILTER_EDITOR_LABELS,
     VIEWS_LABELS,
+    categoryOptions,
+    categoryPath,
     formatDate,
     formatEuro,
     makeCourses,
@@ -50,39 +53,6 @@ const OPTIONS_LABELS = {
     reset: 'Zurücksetzen',
 };
 
-/** The offerings (Ausführungen) of a course, shown when its row is expanded. */
-export function Offerings({ course }: { course: CourseRow }) {
-    return (
-        <div className="px-12 py-3">
-            <table className="w-full max-w-2xl text-sm">
-                <caption className="pb-1 text-left text-xs font-medium text-muted-foreground">
-                    Ausführungen von {course.title}
-                </caption>
-                <thead>
-                    <tr className="text-left text-xs text-muted-foreground">
-                        <th className="py-1 font-medium">Ausführung</th>
-                        <th className="py-1 font-medium">Beginn</th>
-                        <th className="py-1 font-medium">Ort</th>
-                        <th className="py-1 text-right font-medium">Plätze</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {course.offerings.map((o) => (
-                        <tr key={o.id} className="border-t border-border">
-                            <td className="py-1.5">{o.label}</td>
-                            <td className="py-1.5">{formatDate(o.starts)}</td>
-                            <td className="py-1.5">{o.place}</td>
-                            <td className="py-1.5 text-right tabular-nums">
-                                {o.enrolled} / {o.seats}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
 export function CourseList({
     count = 13,
     selection = 'multiple',
@@ -91,6 +61,8 @@ export function CourseList({
     loading = false,
     error = null,
     empty = false,
+    categories = COURSE_CATEGORIES,
+    categoryIds = null,
 }: {
     count?: number;
     selection?: GridSelectionMode;
@@ -99,6 +71,13 @@ export function CourseList({
     loading?: boolean;
     error?: string | null;
     empty?: boolean;
+    /** The category tree as it is now: renames and deletes show up in the grid. */
+    categories?: TreeNode[];
+    /**
+     * Show only courses in these categories (a folder and everything under it); null for all.
+     * A null entry means "without a category" — including courses whose category was deleted.
+     */
+    categoryIds?: (string | null)[] | null;
 }) {
     const initial = useMemo(() => (empty ? [] : makeCourses(count)), [count, empty]);
     const [rows, setRows] = useState(initial);
@@ -135,6 +114,24 @@ export function CourseList({
                     : c,
             ),
         [],
+    );
+
+    // The grid shows each course's category as a path of the tree as it is now.
+    const categorised = useMemo(
+        () => rows.map((r) => ({ ...r, category: categoryPath(categories, r.categoryId) })),
+        [rows, categories],
+    );
+    const shownColumns = useMemo(
+        () =>
+            columns.map((c) =>
+                c.id === 'category'
+                    ? {
+                          ...c,
+                          filter: { type: 'choice' as const, options: categoryOptions(categories) },
+                      }
+                    : c,
+            ),
+        [columns, categories],
     );
 
     const say = (label: string) => (ids: RowId[]) =>
@@ -206,7 +203,7 @@ export function CourseList({
         },
         {
             id: 'move',
-            label: 'In Ordner verschieben',
+            label: 'In Kategorie verschieben',
             icon: <FolderInput aria-hidden="true" />,
             onSelect: say('Verschieben'),
             when: ['one', 'many'],
@@ -262,17 +259,22 @@ export function CourseList({
     ];
 
     const searched = useMemo(
-        () => rows.filter((r) => r.title.toLowerCase().includes(search.toLowerCase())),
-        [rows, search],
+        () =>
+            categorised.filter(
+                (r) =>
+                    (categoryIds === null ||
+                        categoryIds.includes(r.category === null ? null : r.categoryId)) &&
+                    r.title.toLowerCase().includes(search.toLowerCase()),
+            ),
+        [categorised, categoryIds, search],
     );
     const grid = useGrid<CourseRow>({
         id: gridId,
         rows: searched,
         getRowId: (r) => r.id,
-        columns,
+        columns: shownColumns,
         selection,
         actions,
-        isExpandable: (r) => r.offerings.length > 0,
         defaults: groupBy ? { groupBy } : undefined,
     });
     useEffect(() => {
@@ -288,35 +290,33 @@ export function CourseList({
             selectionLabels={{ count: (n) => `${n} ausgewählt`, clear: 'Auswahl aufheben' }}
             shortcutLabels={{ Mod: 'Strg', Shift: 'Umschalt', Delete: 'Entf' }}
             options={
-                <>
-                    <GridViewsMenu
-                        views={grid.views}
-                        activeViewId={grid.activeViewId}
-                        isModified={grid.isViewModified}
-                        onApply={grid.applyView}
-                        onSave={(name) => void grid.saveView(name)}
-                        onUpdate={grid.updateView}
-                        onRename={grid.renameView}
-                        onDelete={grid.deleteView}
-                        labels={VIEWS_LABELS}
-                    />
-                    <GridOptions
-                        preferences={grid.preferences}
-                        canSelect={grid.allowedMode !== 'none'}
-                        columns={COURSE_COLUMNS.map((c) => ({
-                            id: c.id,
-                            label: c.header,
-                            hideable: c.hideable,
-                        }))}
-                        labels={OPTIONS_LABELS}
-                    />
-                </>
+                <GridOptions
+                    preferences={grid.preferences}
+                    canSelect={grid.allowedMode !== 'none'}
+                    columns={COURSE_COLUMNS.map((c) => ({
+                        id: c.id,
+                        label: c.header,
+                        hideable: c.hideable,
+                    }))}
+                    views={{
+                        views: grid.views,
+                        activeViewId: grid.activeViewId,
+                        isModified: grid.isViewModified,
+                        onApply: grid.applyView,
+                        onSave: (name) => void grid.saveView(name),
+                        onUpdate: grid.updateView,
+                        onRename: grid.renameView,
+                        onDelete: grid.deleteView,
+                        labels: VIEWS_LABELS,
+                    }}
+                    labels={OPTIONS_LABELS}
+                />
             }
             chips={
                 grid.filters.length ? (
                     <GridFilterChips
                         filters={grid.filters}
-                        columns={COURSE_COLUMNS}
+                        columns={shownColumns}
                         onRemove={grid.removeFilter}
                         onClearAll={grid.clearFilters}
                         labels={FILTER_CHIPS_LABELS}
@@ -343,7 +343,6 @@ export function CourseList({
                 grid={grid}
                 labels={DATA_GRID_LABELS}
                 rowLabel={(r) => r.title}
-                renderDetail={(r) => <Offerings course={r} />}
                 loading={loading}
                 error={error}
                 onRetry={() => setLast('Erneut versucht')}
