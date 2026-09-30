@@ -89,29 +89,42 @@ export function CourseList({
     const columns: GridColumn<CourseRow>[] = useMemo(
         () =>
             COURSE_COLUMNS.map((c) =>
-                c.id === 'price'
+                c.id === 'title'
                     ? {
                           ...c,
-                          editable: {
-                              type: 'number' as const,
-                              validate: (v: string | number) =>
-                                  Number.isNaN(Number(v)) || Number(v) < 0
-                                      ? 'Bitte einen Preis ab 0 € eingeben.'
-                                      : null,
-                              onCommit: async (row: CourseRow, next: string | number) => {
-                                  await new Promise((r) => setTimeout(r, 400));
-                                  if (Number(next) === 999)
-                                      throw new Error('Der Server hat den Preis abgelehnt.');
-                                  setRows((rs) =>
-                                      rs.map((r) =>
-                                          r.id === row.id ? { ...r, price: Number(next) } : r,
-                                      ),
-                                  );
-                                  setLast(`Preis von „${row.title}" gespeichert`);
-                              },
-                          },
+                          // Dummy target for now: where the course editor will live.
+                          cell: (r: CourseRow) => (
+                              <a
+                                  href={`#/admin/kurse/${r.id}`}
+                                  className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:underline"
+                              >
+                                  {r.title}
+                              </a>
+                          ),
                       }
-                    : c,
+                    : c.id === 'price'
+                      ? {
+                            ...c,
+                            editable: {
+                                type: 'number' as const,
+                                validate: (v: string | number) =>
+                                    Number.isNaN(Number(v)) || Number(v) < 0
+                                        ? 'Bitte einen Preis ab 0 € eingeben.'
+                                        : null,
+                                onCommit: async (row: CourseRow, next: string | number) => {
+                                    await new Promise((r) => setTimeout(r, 400));
+                                    if (Number(next) === 999)
+                                        throw new Error('Der Server hat den Preis abgelehnt.');
+                                    setRows((rs) =>
+                                        rs.map((r) =>
+                                            r.id === row.id ? { ...r, price: Number(next) } : r,
+                                        ),
+                                    );
+                                    setLast(`Preis von „${row.title}" gespeichert`);
+                                },
+                            },
+                        }
+                      : c,
             ),
         [],
     );
@@ -287,6 +300,7 @@ export function CourseList({
             offsetTop="0px"
             grid={grid}
             search={{ value: search, onChange: setSearch, placeholder: 'Kurse suchen …' }}
+            moreActionsLabel="Weitere Aktionen"
             selectionLabels={{ count: (n) => `${n} ausgewählt`, clear: 'Auswahl aufheben' }}
             shortcutLabels={{ Mod: 'Strg', Shift: 'Umschalt', Delete: 'Entf' }}
             options={

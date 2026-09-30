@@ -55,16 +55,15 @@ describe('GridActions — what shows for a selection', () => {
         expect(names()).toEqual(['Duplizieren', 'Zusammenführen', 'Löschen']);
     });
 
-    it('puts a separator only between groups that have something to show', () => {
-        const { container, rerender } = render(<GridActions label="Kurse" items={ITEMS} />);
-        expect(container.querySelectorAll('span.w-px')).toHaveLength(1);
-        rerender(
-            <GridActions
-                label="Kurse"
-                items={[item('A', { group: 'x', when: ['one'] }), item('B', { group: 'y' })]}
-            />,
-        );
+    it('draws no separators: one plain line of icons', () => {
+        const { container } = render(<GridActions label="Kurse" items={ITEMS} />);
         expect(container.querySelectorAll('span.w-px')).toHaveLength(0);
+        expect(screen.queryByRole('separator')).toBeNull();
+    });
+
+    it('shows every action and no overflow menu while it cannot measure (no layout)', () => {
+        render(<GridActions label="Kurse" items={ITEMS} moreLabel="Weitere Aktionen" />);
+        expect(names()).toEqual(['Neu', 'Exportieren']);
     });
 
     it('keeps groups in the order they first appear', () => {

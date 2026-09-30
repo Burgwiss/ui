@@ -20,6 +20,8 @@ export interface GridPageProps<T = unknown> {
     actionsLabel?: string;
     /** Search, right: a magnifier that slides open when clicked or when `/` jumps to it. */
     search?: { value: string; onChange: (value: string) => void; placeholder: string };
+    /** Name of the "…" menu that takes the actions that do not fit, e.g. "Weitere Aktionen". Without it they never collapse. */
+    moreActionsLabel?: string;
     /** Text for the "✕ 3 ausgewählt" part of the toolbar. */
     selectionLabels?: { count: (count: number) => string; clear: string };
     /** Key names in the app's language, e.g. `{ Mod: 'Strg', Delete: 'Entf' }`. */
@@ -53,7 +55,8 @@ export interface GridPageProps<T = unknown> {
  *   [count ·························· pager]
  *
  * The same actions show in the toolbar and the right-click menu, and answer
- * their keyboard shortcuts — always the ones that fit the selection.
+ * their keyboard shortcuts — always the ones that fit the selection. Actions
+ * that do not fit beside the search go behind a "…" menu (`moreActionsLabel`).
  *
  * @summary List-page template: table with selection toolbar, search, filter chips, context menu and footer.
  */
@@ -62,6 +65,7 @@ export function GridPage<T>({
     grid,
     actionsLabel,
     search,
+    moreActionsLabel,
     selectionLabels,
     shortcutLabels,
     options,
@@ -123,6 +127,7 @@ export function GridPage<T>({
                     items={grid?.actions}
                     selectedIds={grid?.selectedIds}
                     shortcutLabels={shortcutLabels}
+                    moreLabel={moreActionsLabel}
                 >
                     {grid && selectionLabels && count > 0 && (
                         <>
@@ -145,7 +150,7 @@ export function GridPage<T>({
                         </>
                     )}
                 </GridActions>
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ml-auto flex shrink-0 items-center gap-1">
                     {search && (
                         <SearchField
                             collapsible
