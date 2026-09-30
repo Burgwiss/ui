@@ -320,7 +320,7 @@ function RangeEditor({
  * min and max (number), or from and to dates (date) — with Apply and Reset. Nothing is
  * emitted while typing: Apply (or Enter in an input) sends the typed `GridFilter`, an empty
  * editor sends `null`, and a reversed range shows an error and sends nothing. The grid owns the
- * popover; for filtering a column by picking one value from a menu use `GridColumnFilter`.
+ * popover (DataGrid's `renderFilter`).
  *
  * @summary Editor for one grid column's filter (text, choice, number or date), shown inside the grid's popover.
  */

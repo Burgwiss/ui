@@ -50,7 +50,6 @@ export * from './molecules/Dialog';
 export * from './molecules/DropdownMenu';
 export * from './molecules/EmptyState';
 export * from './molecules/EntitySearchPicker';
-export * from './molecules/GridColumnFilter';
 export * from './molecules/GridFilterChips';
 export * from './molecules/GridFilterEditor';
 export * from './molecules/GridFooter';
