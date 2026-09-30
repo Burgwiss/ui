@@ -14,7 +14,11 @@ import {
     BreadcrumbSeparator,
 } from '../../molecules/Breadcrumb';
 import { VideoPlayer } from '../../organisms/VideoPlayer';
-import { VIDEO_LABELS_BY_LOCALE } from '../../organisms/VideoPlayer/VideoPlayer.fixtures';
+import {
+    SAMPLE_CAPTIONS,
+    SAMPLE_CHAPTERS,
+    VIDEO_LABELS_BY_LOCALE,
+} from '../../organisms/VideoPlayer/VideoPlayer.fixtures';
 import { useStoryText } from '../../../.storybook/locale';
 
 /**
@@ -166,6 +170,9 @@ function LessonVideoPage({
                         title={t(TEXT.title)}
                         resumeKey="storybook-page-lesson-3"
                         labels={t(VIDEO_LABELS_BY_LOCALE)}
+                        chapters={SAMPLE_CHAPTERS}
+                        captions={SAMPLE_CAPTIONS}
+                        onComplete={() => setProgress((p) => (p === 'open' ? 'done' : p))}
                     />
                     <p className="text-muted-foreground">{t(TEXT.summary)}</p>
                 </div>

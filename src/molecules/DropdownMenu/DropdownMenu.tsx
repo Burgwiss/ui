@@ -37,10 +37,13 @@ function DropdownMenuPortal({
 /** The floating menu panel (in a portal); `sideOffset` defaults to 6px and `align` positions it against the trigger. */
 const DropdownMenuContent = React.forwardRef<
     React.ElementRef<typeof DropdownMenuPrimitive.Content>,
-    React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(function DropdownMenuContent({ className, sideOffset = 6, ...props }, ref) {
+    React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> & {
+        /** Render the menu inside this element instead of <body> — e.g. a fullscreen player, where anything outside it is invisible. */
+        container?: HTMLElement | null;
+    }
+>(function DropdownMenuContent({ className, sideOffset = 6, container, ...props }, ref) {
     return (
-        <DropdownMenuPortal>
+        <DropdownMenuPortal container={container}>
             <DropdownMenuPrimitive.Content
                 ref={ref}
                 data-slot="dropdown-menu-content"
