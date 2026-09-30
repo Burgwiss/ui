@@ -4,3 +4,4 @@ export * from './useGrid';
 export * from './useGridPreferences';
 export * from './useResizableWidth';
 export * from './useFitScale';
+export * from './usePageDraft';

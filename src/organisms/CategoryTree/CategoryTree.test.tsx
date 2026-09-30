@@ -460,3 +460,56 @@ describe('CategoryTree — outside changes', () => {
         expect(tabbable).toHaveLength(1);
     });
 });
+
+describe('CategoryTree — opening a category to edit it', () => {
+    it('offers a pencil beside ⋮ that opens the category, without selecting it', async () => {
+        const onEdit = vi.fn();
+        const { user, onSelect } = setup({ onEdit });
+        await user.click(item('Koran').querySelector<HTMLElement>('[data-tree-edit]')!);
+        expect(onEdit).toHaveBeenCalledWith('koran');
+        expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it('lists "Bearbeiten" first in the menu', async () => {
+        const onEdit = vi.fn();
+        const { user } = setup({ onEdit });
+        await user.pointer({ keys: '[MouseRight]', target: item('Kunst') });
+        const menu = await screen.findByRole('menu');
+        const first = within(menu).getAllByRole('menuitem')[0]!;
+        expect(first).toHaveTextContent('Bearbeiten');
+        await user.click(first);
+        expect(onEdit).toHaveBeenCalledWith('kunst');
+    });
+
+    it('has no pencil and no "Bearbeiten" without onEdit', async () => {
+        const { user } = setup();
+        expect(document.querySelector('[data-tree-edit]')).toBeNull();
+        await user.pointer({ keys: '[MouseRight]', target: item('Kunst') });
+        const menu = await screen.findByRole('menu');
+        expect(within(menu).queryByRole('menuitem', { name: /Bearbeiten/ })).toBeNull();
+    });
+
+    it('still opens a read-only tree’s category from the keyboard menu', async () => {
+        const onEdit = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <CategoryTree
+                nodes={TREE}
+                selectedId={null}
+                onSelect={() => {}}
+                onEdit={onEdit}
+                labels={LABELS}
+            />,
+        );
+        await enter(user);
+        await user.keyboard('{Shift>}{F10}{/Shift}');
+        const menu = await screen.findByRole('menu');
+        expect(
+            within(menu)
+                .getAllByRole('menuitem')
+                .map((m) => m.textContent),
+        ).toEqual(['Bearbeiten']);
+        await user.keyboard('{Enter}');
+        expect(onEdit).toHaveBeenCalledWith('arabisch');
+    });
+});

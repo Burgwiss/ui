@@ -9,6 +9,7 @@ import {
     Settings2,
     Users,
 } from 'lucide-react';
+import { linkTo } from '@storybook/addon-links';
 import { useMemo, useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
@@ -131,6 +132,7 @@ function CoursesPage() {
                             nodes={categories}
                             onNodesChange={setCategories}
                             selectedId={scope.kind === 'category' ? scope.id : null}
+                            onEdit={linkTo('Pages/Kategorie', 'Kategorieseite')}
                             onSelect={(id) =>
                                 setScope(id ? { kind: 'category', id } : { kind: 'all' })
                             }

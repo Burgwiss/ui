@@ -14,6 +14,7 @@ export const CATEGORY_TREE_LABELS: CategoryTreeLabels = {
     add: 'Neue Kategorie',
     newName: 'Neue Kategorie',
     nameInput: 'Name der Kategorie',
+    edit: 'Bearbeiten',
     addChild: 'Unterkategorie anlegen',
     rename: 'Umbenennen',
     moveTo: 'Verschieben nach',

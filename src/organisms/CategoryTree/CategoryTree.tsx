@@ -25,6 +25,7 @@ import {
 } from 'react';
 
 import { IconButton } from '../../atoms/IconButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../atoms/Tooltip';
 import { formatShortcut, type ShortcutLabels } from '../../hooks/shortcuts';
 import { cn } from '../../lib/cn';
 import {
@@ -77,6 +78,8 @@ export interface CategoryTreeLabels {
     newName: string;
     /** Accessible name of the inline name field, e.g. "Name der Kategorie". */
     nameInput: string;
+    /** The pencil's tooltip and the first menu entry, when `onEdit` is given, e.g. "Bearbeiten". */
+    edit?: string;
     /** Menu entry, e.g. "Unterkategorie anlegen". */
     addChild: string;
     /** Menu entry (F2), e.g. "Umbenennen". */
@@ -123,6 +126,11 @@ export interface CategoryTreeProps {
     selectedId: string | null;
     /** Called on click, Enter or Space — and with null when the selected category is deleted. */
     onSelect: (id: string | null) => void;
+    /**
+     * Open a category's own page (its editor). Adds a pencil beside ⋮ on hover and
+     * "Bearbeiten" at the top of the menu — also in a read-only tree.
+     */
+    onEdit?: (id: string) => void;
     /**
      * A number after each name, e.g. courses per category. Shown as given, so pass totals
      * that include subcategories if that is what the page means. Missing ids show none.
@@ -233,6 +241,7 @@ export function CategoryTree({
     onNodesChange,
     selectedId,
     onSelect,
+    onEdit,
     counts,
     createId = () => crypto.randomUUID(),
     defaultExpandedIds = [],
@@ -242,6 +251,7 @@ export function CategoryTree({
     className,
 }: CategoryTreeProps) {
     const editable = onNodesChange !== undefined;
+    const hasMenu = editable || onEdit !== undefined;
     const headingId = useId();
     const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => {
         const open = new Set(readExpanded(storageKey) ?? defaultExpandedIds);
@@ -431,7 +441,7 @@ export function CategoryTree({
             return;
         }
         if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
-            if (editable) {
+            if (hasMenu) {
                 handled();
                 setMenuId(id);
             }
@@ -530,7 +540,12 @@ export function CategoryTree({
 
     const onPointerDown = (event: ReactPointerEvent<HTMLElement>, id: string) => {
         if (!editable || event.button !== 0 || event.pointerType === 'touch') return;
-        if ((event.target as Element).closest('input,[data-tree-menu],[data-tree-toggle]')) return;
+        if (
+            (event.target as Element).closest(
+                'input,[data-tree-menu],[data-tree-toggle],[data-tree-edit]',
+            )
+        )
+            return;
         const start = { x: event.clientX, y: event.clientY };
         let active = false;
         let hover: { id: string | null; timer: number } = { id: null, timer: 0 };
@@ -620,90 +635,105 @@ export function CategoryTree({
                     else lineEls.current.get(id)?.focus();
                 }}
             >
-                <DropdownMenuItem onSelect={() => later(() => startNew(id))}>
-                    <FolderPlus aria-hidden="true" />
-                    {labels.addChild}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => later(() => setEditing({ kind: 'rename', id }))}>
-                    <Pencil aria-hidden="true" />
-                    {labels.rename}
-                    <DropdownMenuShortcut>{shortcut('F2')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                        <FolderInput aria-hidden="true" />
-                        {labels.moveTo}
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                {onEdit && (
+                    <DropdownMenuItem onSelect={() => later(() => onEdit(id))}>
+                        <Pencil aria-hidden="true" />
+                        {labels.edit}
+                    </DropdownMenuItem>
+                )}
+                {editable && onEdit && <DropdownMenuSeparator />}
+                {editable && (
+                    <>
+                        <DropdownMenuItem onSelect={() => later(() => startNew(id))}>
+                            <FolderPlus aria-hidden="true" />
+                            {labels.addChild}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onSelect={() => later(() => setEditing({ kind: 'rename', id }))}
+                        >
+                            <Pencil aria-hidden="true" />
+                            {labels.rename}
+                            <DropdownMenuShortcut>{shortcut('F2')}</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <FolderInput aria-hidden="true" />
+                                {labels.moveTo}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                                <DropdownMenuItem
+                                    disabled={where.parentId === null}
+                                    onSelect={() =>
+                                        run(() => moveNode(nodes, id, null, nodes.length))
+                                    }
+                                >
+                                    {labels.topLevel}
+                                </DropdownMenuItem>
+                                {allLines.map((dest) => (
+                                    <DropdownMenuItem
+                                        key={dest.node.id}
+                                        disabled={
+                                            dest.node.id === where.parentId ||
+                                            !canMove(nodes, id, dest.node.id)
+                                        }
+                                        style={{ paddingInlineStart: `${8 + dest.level * 12}px` }}
+                                        onSelect={() =>
+                                            run(() =>
+                                                moveNode(
+                                                    nodes,
+                                                    id,
+                                                    dest.node.id,
+                                                    dest.node.children?.length ?? 0,
+                                                ),
+                                            )
+                                        }
+                                    >
+                                        {dest.node.label}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuItem
+                            disabled={first}
+                            onSelect={() => run(() => moveSibling(nodes, id, -1))}
+                        >
+                            <ArrowUp aria-hidden="true" />
+                            {labels.moveUp}
+                            <DropdownMenuShortcut>{shortcut('Alt+↑')}</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            disabled={last}
+                            onSelect={() => run(() => moveSibling(nodes, id, 1))}
+                        >
+                            <ArrowDown aria-hidden="true" />
+                            {labels.moveDown}
+                            <DropdownMenuShortcut>{shortcut('Alt+↓')}</DropdownMenuShortcut>
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             disabled={where.parentId === null}
-                            onSelect={() => run(() => moveNode(nodes, id, null, nodes.length))}
+                            onSelect={() => run(() => outdentNode(nodes, id))}
                         >
-                            {labels.topLevel}
+                            <IndentDecrease aria-hidden="true" className="rtl:-scale-x-100" />
+                            {labels.outdent}
+                            <DropdownMenuShortcut>{shortcut('Alt+←')}</DropdownMenuShortcut>
                         </DropdownMenuItem>
-                        {allLines.map((dest) => (
-                            <DropdownMenuItem
-                                key={dest.node.id}
-                                disabled={
-                                    dest.node.id === where.parentId ||
-                                    !canMove(nodes, id, dest.node.id)
-                                }
-                                style={{ paddingInlineStart: `${8 + dest.level * 12}px` }}
-                                onSelect={() =>
-                                    run(() =>
-                                        moveNode(
-                                            nodes,
-                                            id,
-                                            dest.node.id,
-                                            dest.node.children?.length ?? 0,
-                                        ),
-                                    )
-                                }
-                            >
-                                {dest.node.label}
-                            </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuItem
-                    disabled={first}
-                    onSelect={() => run(() => moveSibling(nodes, id, -1))}
-                >
-                    <ArrowUp aria-hidden="true" />
-                    {labels.moveUp}
-                    <DropdownMenuShortcut>{shortcut('Alt+↑')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    disabled={last}
-                    onSelect={() => run(() => moveSibling(nodes, id, 1))}
-                >
-                    <ArrowDown aria-hidden="true" />
-                    {labels.moveDown}
-                    <DropdownMenuShortcut>{shortcut('Alt+↓')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    disabled={where.parentId === null}
-                    onSelect={() => run(() => outdentNode(nodes, id))}
-                >
-                    <IndentDecrease aria-hidden="true" className="rtl:-scale-x-100" />
-                    {labels.outdent}
-                    <DropdownMenuShortcut>{shortcut('Alt+←')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    disabled={first}
-                    onSelect={() => run(() => indentNode(nodes, id))}
-                >
-                    <IndentIncrease aria-hidden="true" className="rtl:-scale-x-100" />
-                    {labels.indent}
-                    <DropdownMenuShortcut>{shortcut('Alt+→')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => later(() => requestDelete(id))}>
-                    <Trash2 aria-hidden="true" />
-                    {labels.delete}
-                    <DropdownMenuShortcut>{shortcut('Delete')}</DropdownMenuShortcut>
-                </DropdownMenuItem>
+                        <DropdownMenuItem
+                            disabled={first}
+                            onSelect={() => run(() => indentNode(nodes, id))}
+                        >
+                            <IndentIncrease aria-hidden="true" className="rtl:-scale-x-100" />
+                            {labels.indent}
+                            <DropdownMenuShortcut>{shortcut('Alt+→')}</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => later(() => requestDelete(id))}>
+                            <Trash2 aria-hidden="true" />
+                            {labels.delete}
+                            <DropdownMenuShortcut>{shortcut('Delete')}</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
         );
     };
@@ -745,7 +775,7 @@ export function CategoryTree({
                     onSelect(id);
                 }}
                 onContextMenu={(event: MouseEvent) => {
-                    if (!editable || line.draft) return;
+                    if (!hasMenu || line.draft) return;
                     event.preventDefault();
                     setMenuId(id);
                 }}
@@ -798,14 +828,39 @@ export function CategoryTree({
                         aria-hidden="true"
                         className={cn(
                             'shrink-0 px-1 text-xs text-muted-foreground tabular-nums',
-                            editable && 'group-hover/line:hidden group-focus-visible/line:hidden',
+                            hasMenu && 'group-hover/line:hidden group-focus-visible/line:hidden',
                             menuId === id && 'hidden',
                         )}
                     >
                         {count}
                     </span>
                 )}
-                {editable && !line.draft && !renaming && (
+                {onEdit && !line.draft && !renaming && (
+                    // Mouse shortcut only: "Bearbeiten" in the menu does the same from the keyboard.
+                    <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    data-tree-edit=""
+                                    aria-hidden="true"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onEdit(id);
+                                    }}
+                                    className={cn(
+                                        'hidden size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground',
+                                        'group-hover/line:flex group-focus-visible/line:flex',
+                                        menuId === id && 'flex',
+                                    )}
+                                >
+                                    <Pencil className="size-3.5" />
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>{labels.edit}</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+                {hasMenu && !line.draft && !renaming && (
                     <DropdownMenu
                         open={menuId === id}
                         onOpenChange={(open) => setMenuId(open ? id : null)}
