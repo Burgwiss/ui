@@ -1,4 +1,4 @@
-import { Ellipsis } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '../../atoms/Button';
@@ -149,7 +149,7 @@ export function GridActions({
                             tooltip={moreLabel}
                             className="shrink-0 text-muted-foreground"
                         >
-                            <Ellipsis aria-hidden="true" />
+                            <EllipsisVertical aria-hidden="true" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-60">

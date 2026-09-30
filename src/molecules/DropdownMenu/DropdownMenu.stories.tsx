@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MoreHorizontal } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '../../atoms/Button';
@@ -34,7 +34,7 @@ export const Default: Story = {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" aria-label="Open menu">
-                        <MoreHorizontal className="size-4" />
+                        <EllipsisVertical className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -62,7 +62,7 @@ export const Open: Story = {
             <DropdownMenu defaultOpen modal={false}>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" aria-label="Open menu">
-                        <MoreHorizontal className="size-4" />
+                        <EllipsisVertical className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
