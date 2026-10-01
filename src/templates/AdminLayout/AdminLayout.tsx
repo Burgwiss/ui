@@ -28,7 +28,7 @@ export function AdminLayout({ rail, sidebar, children, className }: AdminLayoutP
                 {sidebar ? (
                     <SidebarLayout sidebar={sidebar}>{children}</SidebarLayout>
                 ) : (
-                    <main className="h-full min-h-0 overflow-auto">{children}</main>
+                    <main className="relative h-full min-h-0 overflow-auto">{children}</main>
                 )}
             </div>
         </div>

@@ -23,7 +23,7 @@ export interface SidebarLayoutProps {
  * @summary Layout with a sidebar on one side and a scrolling main area, filling its container.
  */
 export function SidebarLayout({ sidebar, side = 'left', children, className }: SidebarLayoutProps) {
-    const main = <main className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</main>;
+    const main = <main className="relative min-h-0 min-w-0 flex-1 overflow-auto">{children}</main>;
     // DOM order follows the visual order, so reading and Tab order match what is seen.
     return (
         <div className={cn('flex h-full min-h-0 w-full', className)}>
