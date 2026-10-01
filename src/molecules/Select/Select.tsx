@@ -3,6 +3,7 @@ import { Select as SelectPrimitive } from 'radix-ui';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { cn } from '../../lib/cn';
+import { itemFocusRing } from '../../lib/itemFocus';
 
 /**
  * The ONE class string for a native `<select>`.
@@ -182,6 +183,7 @@ const SelectItem = React.forwardRef<
             data-slot="select-item"
             className={cn(
                 'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                itemFocusRing.real,
                 className,
             )}
             {...props}

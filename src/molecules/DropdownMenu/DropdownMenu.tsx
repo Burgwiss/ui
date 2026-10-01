@@ -3,6 +3,7 @@ import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 import { Check, ChevronRight, Circle } from 'lucide-react';
 
 import { cn } from '../../lib/cn';
+import { itemFocusRing } from '../../lib/itemFocus';
 
 /**
  * A menu of actions opened by a visible trigger button (Radix DropdownMenu): row actions,
@@ -76,6 +77,7 @@ const DropdownMenuItem = React.forwardRef<
             className={cn(
                 'relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground transition-colors outline-none select-none',
                 'focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground',
+                itemFocusRing.real,
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,
             )}
@@ -98,6 +100,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
             className={cn(
                 'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm text-foreground transition-colors outline-none select-none',
                 'focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground',
+                itemFocusRing.real,
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,
             )}
@@ -133,6 +136,7 @@ const DropdownMenuRadioItem = React.forwardRef<
             className={cn(
                 'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm text-foreground transition-colors outline-none select-none',
                 'focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground',
+                itemFocusRing.real,
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 className,
             )}
@@ -166,6 +170,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
             className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground outline-none select-none',
                 'focus:bg-muted data-[highlighted]:bg-muted data-[state=open]:bg-muted',
+                itemFocusRing.real,
                 className,
             )}
             {...props}

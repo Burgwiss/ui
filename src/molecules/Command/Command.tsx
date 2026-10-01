@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../Dialog';
 import { cn } from '../../lib/cn';
+import { itemFocusRing } from '../../lib/itemFocus';
 
 /**
  * A filterable, keyboard-navigable command list (built on cmdk): an input that filters
@@ -160,6 +161,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
             data-slot="command-item"
             className={cn(
                 'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
+                itemFocusRing.cmdk,
                 className,
             )}
             {...props}

@@ -9,6 +9,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { cn } from '../../lib/cn';
+import { itemFocusRing } from '../../lib/itemFocus';
 
 interface ComboboxProps {
     /** Id of the text input, so an outside `<Label htmlFor>` can point at it. */
@@ -110,7 +111,10 @@ export function Combobox({
                             <ComboboxOption
                                 key={option}
                                 value={option}
-                                className="group flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground data-[focus]:bg-accent data-[focus]:text-accent-foreground"
+                                className={cn(
+                                    'group flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground data-[focus]:bg-accent data-[focus]:text-accent-foreground',
+                                    itemFocusRing.headless,
+                                )}
                             >
                                 <Check
                                     className="h-4 w-4 opacity-0 group-data-[selected]:opacity-100"

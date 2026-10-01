@@ -2,6 +2,7 @@ import * as React from 'react';
 import { ContextMenu as ContextMenuPrimitive } from 'radix-ui';
 
 import { cn } from '../../lib/cn';
+import { itemFocusRing } from '../../lib/itemFocus';
 
 /**
  * The right-click menu (Radix ContextMenu), styled like DropdownMenu so the
@@ -64,6 +65,7 @@ const ContextMenuItem = React.forwardRef<
             className={cn(
                 'relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground outline-none select-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground',
                 'data-[highlighted]:bg-muted',
+                itemFocusRing.real,
                 'data-[tone=destructive]:data-[highlighted]:bg-destructive data-[tone=destructive]:data-[highlighted]:text-destructive-foreground data-[tone=destructive]:data-[highlighted]:[&_svg]:text-destructive-foreground',
                 'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
                 className,
