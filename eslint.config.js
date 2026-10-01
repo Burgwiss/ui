@@ -37,6 +37,7 @@ export default tseslint.config(
         ignores: ['src/**/*.stories.tsx', 'src/**/*.test.tsx', 'src/**/*.fixtures.{ts,tsx}'],
         rules: {
             'local/no-untranslated-jsx-text': 'error',
+            'local/no-physical-direction': 'error',
             'no-restricted-imports': [
                 'error',
                 {
