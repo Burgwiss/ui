@@ -569,7 +569,7 @@ function CategoryPage({ initial = START }: { initial?: Record<Lang, Fields> }) {
 }
 
 const meta: Meta<typeof CategoryPage> = {
-    title: 'Pages/Kategorie',
+    title: 'Pages/Admin/Kategorie',
     component: CategoryPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

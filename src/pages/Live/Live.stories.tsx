@@ -2481,18 +2481,18 @@ function LivePage({
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem
                         icon={UsersIcon}
                         label="Nutzer"
-                        onClick={linkTo('Pages/Nutzerverwaltung', 'Nutzerliste')}
+                        onClick={linkTo('Pages/Admin/Nutzerverwaltung', 'Nutzerliste')}
                     />
                     <AppRailItem icon={Video} label="Live" active />
                     <AppRailItem
                         icon={CreditCard}
                         label="Zahlungen"
-                        onClick={linkTo('Pages/Zahlungen', 'Bestellungen')}
+                        onClick={linkTo('Pages/Admin/Zahlungen', 'Bestellungen')}
                     />
                     <AppRailItem icon={Palette} label="Design" onClick={() => {}} />
                     <AppRailSpacer />
@@ -2526,7 +2526,7 @@ function LivePage({
  * around — it responds, but saves nothing.
  */
 const meta: Meta<typeof LivePage> = {
-    title: 'Pages/Live',
+    title: 'Pages/Admin/Live',
     component: LivePage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

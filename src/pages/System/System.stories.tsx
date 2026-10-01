@@ -183,31 +183,31 @@ const TO = {
     paymentsStorno: {
         label: 'Zahlungen › Widerrufe & Stornos',
         href: '#/admin/payments/withdrawals',
-        story: ['Pages/Zahlungen', 'WiderrufeUndStornos'],
+        story: ['Pages/Admin/Zahlungen', 'WiderrufeUndStornos'],
     },
     courses: {
         label: 'Kurse › Alle Kurse',
         href: '#/admin/courses',
-        story: ['Pages/Kursverwaltung', 'Kursliste'],
+        story: ['Pages/Admin/Kursverwaltung', 'Kursliste'],
     },
     coursesSettings: { label: 'Kurse › Einstellungen', href: '#/admin/courses/settings' },
     usersList: {
         label: 'Nutzer › Wartet auf Freigabe',
         href: '#/admin/users?status=pending',
-        story: ['Pages/Nutzerverwaltung', 'Nutzerliste'],
+        story: ['Pages/Admin/Nutzerverwaltung', 'Nutzerliste'],
     },
     usersLogin: { label: 'Nutzer › Anmeldung', href: '#/admin/users/sign-in' },
     liveSettings: {
         label: 'Live › Einstellungen',
         href: '#/admin/live/settings',
-        story: ['Pages/Live', 'Einstellungen'],
+        story: ['Pages/Admin/Live', 'Einstellungen'],
     },
     websiteTheme: { label: 'Website › Theme', href: '#/admin/website/theme' },
     websiteSettings: { label: 'Website › Einstellungen', href: '#/admin/website/settings' },
     sponsorsSettings: {
         label: 'Sponsoren › Einstellungen',
         href: '#/admin/sponsors/settings',
-        story: ['Pages/Sponsoren', 'Einstellungen'],
+        story: ['Pages/Admin/Sponsoren', 'Einstellungen'],
     },
     backupRunbook: { label: 'Anleitung: Backups', href: '#/docs/runbooks/backup' },
     jobs: { label: 'System › Hintergrundaufgaben', href: '#/admin/jobs', view: { kind: 'jobs' } },
@@ -1075,7 +1075,7 @@ const STAFF: Record<string, string> = {
 const userTarget = (name: string): Target => ({
     label: name,
     href: `#/admin/users?search=${encodeURIComponent(name)}`,
-    story: ['Pages/Nutzerverwaltung', 'NutzerOffen'],
+    story: ['Pages/Admin/Nutzerverwaltung', 'NutzerOffen'],
 });
 
 const AUDIT: AuditEntry[] = [
@@ -1103,7 +1103,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Yusuf Okafor ↔ Samira Haddou',
             href: '#/admin/messages/41',
-            story: ['Pages/Kommunikation', 'UnterhaltungSheet'],
+            story: ['Pages/Admin/Kommunikation', 'UnterhaltungSheet'],
         },
         details: [
             ['Kurs', 'Arabisch A1 · Herbst 2026 · Online'],
@@ -1144,7 +1144,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Stiftung Bildungsbrücke',
             href: '#/admin/sponsors/1',
-            story: ['Pages/Sponsoren', 'SponsorSheet'],
+            story: ['Pages/Admin/Sponsoren', 'SponsorSheet'],
         },
     },
     {
@@ -1204,7 +1204,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Kanal „Fragen zur Grammatik“',
             href: '#/admin/channels/3',
-            story: ['Pages/Kommunikation', 'KanalSheet'],
+            story: ['Pages/Admin/Kommunikation', 'KanalSheet'],
         },
         details: [
             ['Kurs', 'Arabisch A1 · Herbst 2026 · Online'],
@@ -1235,7 +1235,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Bestellung #2041',
             href: '#/admin/payments/orders/2041',
-            story: ['Pages/Zahlungen', 'Bestellungen'],
+            story: ['Pages/Admin/Zahlungen', 'Bestellungen'],
         },
         change: [{ field: 'Status', from: 'Bezahlt', to: 'Erstattet' }],
         details: [
@@ -1312,7 +1312,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Arabisch A1 · Herbst 2026 · Online',
             href: '#/admin/offerings/12',
-            story: ['Pages/Kommunikation', 'InDerAusfuehrung'],
+            story: ['Pages/Admin/Kommunikation', 'InDerAusfuehrung'],
         },
         change: [{ field: 'Status', from: 'Entwurf', to: 'Veröffentlicht' }],
     },
@@ -1339,7 +1339,7 @@ const AUDIT: AuditEntry[] = [
         subjectTarget: {
             label: 'Arabisch A1 – Termin 5',
             href: '#/admin/live/sessions/88',
-            story: ['Pages/Live', 'Sitzungen'],
+            story: ['Pages/Admin/Live', 'Sitzungen'],
         },
         details: [['Eingeladene', '31 — per E-Mail und in der App benachrichtigt']],
     },
@@ -1446,28 +1446,28 @@ function Shell({ menu, children }: { menu: ReactNode; children: ReactNode }) {
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem
                         icon={UsersIcon}
                         label="Nutzer"
-                        onClick={linkTo('Pages/Nutzerverwaltung', 'Nutzerliste')}
+                        onClick={linkTo('Pages/Admin/Nutzerverwaltung', 'Nutzerliste')}
                     />
                     <AppRailItem icon={PanelsTopLeft} label="Website" onClick={() => {}} />
                     <AppRailItem
                         icon={Video}
                         label="Live"
-                        onClick={linkTo('Pages/Live', 'Sitzungen')}
+                        onClick={linkTo('Pages/Admin/Live', 'Sitzungen')}
                     />
                     <AppRailItem
                         icon={CreditCard}
                         label="Zahlungen"
-                        onClick={linkTo('Pages/Zahlungen', 'Bestellungen')}
+                        onClick={linkTo('Pages/Admin/Zahlungen', 'Bestellungen')}
                     />
                     <AppRailItem
                         icon={HandCoins}
                         label="Sponsoren"
-                        onClick={linkTo('Pages/Sponsoren', 'Sponsoren')}
+                        onClick={linkTo('Pages/Admin/Sponsoren', 'Sponsoren')}
                     />
                     <AppRailSpacer />
                     <AppRailItem icon={Settings2} label="System" active />
@@ -3815,7 +3815,7 @@ function SystemPage({
  * mobile app. Click around — it responds, but saves nothing.
  */
 const meta: Meta<typeof SystemPage> = {
-    title: 'Pages/System',
+    title: 'Pages/Admin/System',
     component: SystemPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

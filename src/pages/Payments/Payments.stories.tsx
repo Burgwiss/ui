@@ -313,12 +313,12 @@ function Shell({ menu, children }: { menu: ReactNode; children: ReactNode }) {
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem
                         icon={UsersIcon}
                         label="Nutzer"
-                        onClick={linkTo('Pages/Nutzerverwaltung', 'Nutzerliste')}
+                        onClick={linkTo('Pages/Admin/Nutzerverwaltung', 'Nutzerliste')}
                     />
                     <AppRailItem icon={CreditCard} label="Zahlungen" active />
                     <AppRailItem icon={Palette} label="Design" onClick={() => {}} />
@@ -1222,7 +1222,7 @@ function OrderSheet({
                                 href="#/admin/users/1"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    linkTo('Pages/Nutzerverwaltung', 'NutzerOffen')();
+                                    linkTo('Pages/Admin/Nutzerverwaltung', 'NutzerOffen')();
                                 }}
                                 className="font-medium underline-offset-4 hover:underline"
                             >
@@ -2081,7 +2081,7 @@ function PaymentsPage({
  * report. Click around — it responds, but saves nothing.
  */
 const meta: Meta<typeof PaymentsPage> = {
-    title: 'Pages/Zahlungen',
+    title: 'Pages/Admin/Zahlungen',
     component: PaymentsPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

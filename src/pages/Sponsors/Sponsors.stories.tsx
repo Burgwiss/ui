@@ -592,22 +592,22 @@ function Shell({ menu, children }: { menu: ReactNode; children: ReactNode }) {
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem
                         icon={UsersIcon}
                         label="Nutzer"
-                        onClick={linkTo('Pages/Nutzerverwaltung', 'Nutzerliste')}
+                        onClick={linkTo('Pages/Admin/Nutzerverwaltung', 'Nutzerliste')}
                     />
                     <AppRailItem
                         icon={Video}
                         label="Live"
-                        onClick={linkTo('Pages/Live', 'Sitzungen')}
+                        onClick={linkTo('Pages/Admin/Live', 'Sitzungen')}
                     />
                     <AppRailItem
                         icon={CreditCard}
                         label="Zahlungen"
-                        onClick={linkTo('Pages/Zahlungen', 'Bestellungen')}
+                        onClick={linkTo('Pages/Admin/Zahlungen', 'Bestellungen')}
                     />
                     {/* MOCK-ONLY: today the Sponsoren nav entry is hidden while the feature is off; here it stays so the switch is always one click away. */}
                     <AppRailItem icon={HandCoins} label="Sponsoren" active />
@@ -2894,7 +2894,7 @@ function SponsorsPage({
  * responds, but saves nothing.
  */
 const meta: Meta<typeof SponsorsPage> = {
-    title: 'Pages/Sponsoren',
+    title: 'Pages/Admin/Sponsoren',
     component: SponsorsPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

@@ -692,7 +692,7 @@ function UsersPage({
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem icon={UsersIcon} label="Nutzer" active />
                     <AppRailItem icon={CreditCard} label="Zahlungen" onClick={() => {}} />
@@ -2057,7 +2057,7 @@ function UserSheet({
  * saves nothing.
  */
 const meta: Meta<typeof UsersPage> = {
-    title: 'Pages/Nutzerverwaltung',
+    title: 'Pages/Admin/Nutzerverwaltung',
     component: UsersPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

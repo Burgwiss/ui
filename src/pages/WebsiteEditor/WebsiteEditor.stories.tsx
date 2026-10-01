@@ -3601,7 +3601,7 @@ function TopBar({ path, changes, note }: { path?: string; changes: number; note:
 // ---------------------------------------------------------------------------
 
 const meta: Meta<typeof WebsiteEditor> = {
-    title: 'Pages/Website-Editor',
+    title: 'Pages/Admin/Website-Editor',
     component: WebsiteEditor,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

@@ -707,7 +707,7 @@ function AddLine({ label, onAdd }: { label: string; onAdd: (value: string) => vo
 }
 
 const meta: Meta<typeof CoursePage> = {
-    title: 'Pages/Kurs',
+    title: 'Pages/Admin/Kurs',
     component: CoursePage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

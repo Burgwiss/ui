@@ -1872,35 +1872,35 @@ function Shell({ menu, children }: { menu: ReactNode; children: ReactNode }) {
                     <AppRailItem
                         icon={BookOpen}
                         label="Kurse"
-                        onClick={linkTo('Pages/Kursverwaltung', 'Kursliste')}
+                        onClick={linkTo('Pages/Admin/Kursverwaltung', 'Kursliste')}
                     />
                     <AppRailItem
                         icon={UsersIcon}
                         label="Nutzer"
-                        onClick={linkTo('Pages/Nutzerverwaltung', 'Nutzerliste')}
+                        onClick={linkTo('Pages/Admin/Nutzerverwaltung', 'Nutzerliste')}
                     />
                     <AppRailItem icon={PanelsTopLeft} label="Website" onClick={() => {}} />
                     <AppRailItem
                         icon={Video}
                         label="Live"
-                        onClick={linkTo('Pages/Live', 'Sitzungen')}
+                        onClick={linkTo('Pages/Admin/Live', 'Sitzungen')}
                     />
                     <AppRailItem
                         icon={CreditCard}
                         label="Zahlungen"
-                        onClick={linkTo('Pages/Zahlungen', 'Bestellungen')}
+                        onClick={linkTo('Pages/Admin/Zahlungen', 'Bestellungen')}
                     />
                     <AppRailItem
                         icon={HandCoins}
                         label="Sponsoren"
-                        onClick={linkTo('Pages/Sponsoren', 'Sponsoren')}
+                        onClick={linkTo('Pages/Admin/Sponsoren', 'Sponsoren')}
                     />
                     <AppRailItem icon={MessagesSquare} label="Kommunikation" active />
                     <AppRailSpacer />
                     <AppRailItem
                         icon={Settings2}
                         label="System"
-                        onClick={linkTo('Pages/System', 'Uebersicht')}
+                        onClick={linkTo('Pages/Admin/System', 'Uebersicht')}
                     />
                     <AppRailItem icon={UserRound} label="Konto" onClick={() => {}} />
                 </AppRail>
@@ -2355,7 +2355,7 @@ function ThreadSheet({ thread, onClose }: { thread: Thread; onClose: () => void 
                             </div>
                         </div>
                         {/* MOCK-ONLY: a link to this conversation's entries — the audit log filters by action only. */}
-                        <Button variant="outline" onClick={linkTo('Pages/System', 'Protokoll')}>
+                        <Button variant="outline" onClick={linkTo('Pages/Admin/System', 'Protokoll')}>
                             <ScrollText aria-hidden="true" /> Im Protokoll
                         </Button>
                     </div>
@@ -3896,7 +3896,7 @@ function RulesView() {
                     <StoryLink
                         label="System › Zugangsdaten"
                         href="#/admin/system/credentials"
-                        story={['Pages/System', 'Zugangsdaten']}
+                        story={['Pages/Admin/System', 'Zugangsdaten']}
                         className="w-fit text-sm"
                     />
                 </SettingsSection>
@@ -4124,7 +4124,7 @@ function CommunicationPage({
  * campaigns later. Click around — it responds, but saves nothing.
  */
 const meta: Meta<typeof CommunicationPage> = {
-    title: 'Pages/Kommunikation',
+    title: 'Pages/Admin/Kommunikation',
     component: CommunicationPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

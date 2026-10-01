@@ -132,7 +132,7 @@ function CoursesPage() {
                             nodes={categories}
                             onNodesChange={setCategories}
                             selectedId={scope.kind === 'category' ? scope.id : null}
-                            onEdit={linkTo('Pages/Kategorie', 'Kategorieseite')}
+                            onEdit={linkTo('Pages/Admin/Kategorie', 'Kategorieseite')}
                             onSelect={(id) =>
                                 setScope(id ? { kind: 'category', id } : { kind: 'all' })
                             }
@@ -162,7 +162,7 @@ function CoursesPage() {
  * but saves nothing.
  */
 const meta: Meta<typeof CoursesPage> = {
-    title: 'Pages/Kursverwaltung',
+    title: 'Pages/Admin/Kursverwaltung',
     component: CoursesPage,
     tags: ['prototype'],
     parameters: { layout: 'fullscreen' },

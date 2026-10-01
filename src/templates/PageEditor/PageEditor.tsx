@@ -42,8 +42,8 @@ export interface PageEditorProps {
 
 /**
  * The layout for editing a page in place (a course page, a category page):
- * a top bar, the page itself in the middle — shown as visitors will see it,
- * at computer or phone width — with a small toolbar floating at the bottom
+ * a top bar, the page itself filling the middle edge to edge — shown as
+ * visitors will see it, at computer or phone width — with a small toolbar floating at the bottom
  * of the preview (as in the design studio), and a resizable panel on the
  * right for completeness and publishing state. It fills its container; put
  * it inside `AdminLayout` next to the page's own sidebar.
@@ -71,14 +71,19 @@ export function PageEditor({
             </div>
             <div className="flex min-h-0 flex-1">
                 <div className="relative min-w-0 flex-1">
-                    <div className="h-full overflow-auto bg-muted/50 px-6 pt-8 pb-24">
+                    {/* Edge to edge: the page fills the middle as visitors see it. The
+                        width switch only narrows it to a phone column; the bottom
+                        padding keeps the last section clear of the floating toolbar. */}
+                    <div className="h-full overflow-auto bg-muted/50">
                         <section
                             aria-label={labels.preview}
                             data-device={device}
                             className={cn(
-                                'mx-auto overflow-hidden rounded-xl border border-border bg-card shadow-sm',
+                                'mx-auto min-h-full overflow-hidden bg-card pb-24',
                                 'transition-[max-width] duration-300 ease-out motion-reduce:transition-none',
-                                device === 'desktop' ? 'max-w-3xl' : 'max-w-[390px]',
+                                device === 'desktop'
+                                    ? 'max-w-full'
+                                    : 'max-w-[390px] border-x border-border shadow-sm',
                             )}
                         >
                             {children}
