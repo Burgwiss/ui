@@ -181,7 +181,7 @@ describe('GridPage', () => {
     it('draws lines between columns', () => {
         const { container } = render(<Page />);
         expect(container.querySelector('[data-density]')?.className).toContain(
-            '[&_td:not(:last-child)]:border-r',
+            '[&_td:not(:last-child)]:border-e',
         );
     });
 

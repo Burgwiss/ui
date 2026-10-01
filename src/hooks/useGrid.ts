@@ -1,3 +1,4 @@
+import { isRtl } from '../lib/direction';
 import {
     useEffect,
     useRef,
@@ -477,7 +478,7 @@ export function useGrid<T>({
             case 'ArrowLeft': {
                 // Open with →, close with ← — the tree-grid convention (mirrored in RTL).
                 if (!row || !canExpand(row)) return;
-                const rtl = (target as HTMLElement).closest('[dir=rtl]') !== null;
+                const rtl = isRtl(target as HTMLElement);
                 const opening = (event.key === 'ArrowRight') !== rtl;
                 if (opening !== expandedRows.has(rowId)) {
                     event.preventDefault();

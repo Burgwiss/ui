@@ -25,6 +25,7 @@ import type { GridColumn, GridColumnLayout, GridFilter, GridGroup } from '../../
 import type { RowId } from '../../hooks/gridActions';
 import { GRID_CONTROL_COLUMN_WIDTH, type GridApi } from '../../hooks/useGrid';
 import { cn } from '../../lib/cn';
+import { inlineArrows, isRtl } from '../../lib/direction';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -104,7 +105,9 @@ const VIRTUALIZE_FROM = 200;
 
 function stickyStyle(col: GridColumnLayout, header = false): CSSProperties | undefined {
     if (!col.pinned) return undefined;
-    return { position: 'sticky', [col.pinned]: col.offset, zIndex: header ? 30 : 10 };
+    // `pinned: 'left'` is the START edge — the right in a right-to-left grid.
+    const edge = col.pinned === 'left' ? 'insetInlineStart' : 'insetInlineEnd';
+    return { position: 'sticky', [edge]: col.offset, zIndex: header ? 30 : 10 };
 }
 
 /**
@@ -259,8 +262,8 @@ export function DataGrid<T>({
                     <tr className="border-b border-border">
                         {grid.showCheckboxes && (
                             <th
-                                className="h-10 border-b border-border bg-muted px-3 text-left"
-                                style={{ position: 'sticky', left: 0, zIndex: 30 }}
+                                className="h-10 border-b border-border bg-muted px-3 text-start"
+                                style={{ position: 'sticky', insetInlineStart: 0, zIndex: 30 }}
                             >
                                 <input {...grid.getSelectAllProps(labels.selectAll)} />
                             </th>
@@ -270,7 +273,9 @@ export function DataGrid<T>({
                                 className="h-10 border-b border-border bg-muted"
                                 style={{
                                     position: 'sticky',
-                                    left: grid.showCheckboxes ? GRID_CONTROL_COLUMN_WIDTH : 0,
+                                    insetInlineStart: grid.showCheckboxes
+                                        ? GRID_CONTROL_COLUMN_WIDTH
+                                        : 0,
                                     zIndex: 30,
                                 }}
                             >
@@ -446,12 +451,12 @@ function HeaderCell<T>({
             style={{ width: layout.width, ...stickyStyle(layout, true) }}
             onPointerDown={(e) => onHeaderPointerDown(e, column.id)}
             className={cn(
-                'group/th relative border-b border-border bg-muted px-2 text-left align-middle text-xs font-medium tracking-wider text-muted-foreground uppercase select-none',
+                'group/th relative border-b border-border bg-muted px-2 text-start align-middle text-xs font-medium tracking-wider text-muted-foreground uppercase select-none',
                 grid.preferences.values.density === 'compact' ? 'h-8' : 'h-10',
-                !isLast && 'border-r',
+                !isLast && 'border-e',
                 dragOver && 'bg-accent',
                 layout.pinned === 'left' && 'shadow-[inset_-1px_0_0_var(--border)]',
-                column.align === 'right' && 'text-right',
+                column.align === 'right' && 'text-end',
             )}
         >
             <Popover open={filterOpen} onOpenChange={onFilterOpenChange}>
@@ -504,7 +509,7 @@ function HeaderCell<T>({
                                     variant="ghost"
                                     size="icon-xs"
                                     aria-label={labels.columnMenu(column.header)}
-                                    className="ml-auto shrink-0 text-muted-foreground opacity-60 group-hover/th:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
+                                    className="ms-auto shrink-0 text-muted-foreground opacity-60 group-hover/th:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
                                 >
                                     <EllipsisVertical aria-hidden="true" />
                                 </Button>
@@ -656,7 +661,7 @@ function ResizeHandle<T>({
         event.preventDefault();
         event.stopPropagation();
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        const rtl = event.currentTarget.closest('[dir=rtl]') !== null;
+        const rtl = isRtl(event.currentTarget);
         drag.current = { x: event.clientX, width: layout.width, dir: rtl ? -1 : 1 };
     };
     const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -666,9 +671,7 @@ function ResizeHandle<T>({
     };
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         const step = event.shiftKey ? BIG_STEP : STEP;
-        const rtl = event.currentTarget.closest('[dir=rtl]') !== null;
-        const grow = rtl ? 'ArrowLeft' : 'ArrowRight';
-        const shrink = rtl ? 'ArrowRight' : 'ArrowLeft';
+        const { forward: grow, back: shrink } = inlineArrows(event.currentTarget);
         const next: Record<string, () => number> = {
             [grow]: () => layout.width + step,
             [shrink]: () => layout.width - step,
@@ -710,7 +713,7 @@ function ResizeHandle<T>({
         >
             <span
                 aria-hidden="true"
-                className="absolute inset-y-1 start-1/2 w-0.5 -translate-x-1/2 rounded bg-transparent transition-colors group-hover/rs:bg-ring group-focus-visible/rs:bg-ring"
+                className="absolute inset-y-1 left-1/2 w-0.5 -translate-x-1/2 rounded bg-transparent transition-colors group-hover/rs:bg-ring group-focus-visible/rs:bg-ring"
             />
         </div>
     );
@@ -747,7 +750,7 @@ function GroupRow<T>({
                         className={cn(
                             'border-b border-border px-3 py-2 text-sm font-medium',
                             l.pinned && 'bg-muted',
-                            col.align === 'right' && 'text-right tabular-nums',
+                            col.align === 'right' && 'text-end tabular-nums',
                         )}
                     >
                         {index === 0 ? (
@@ -756,7 +759,7 @@ function GroupRow<T>({
                                 aria-expanded={open}
                                 onClick={() => grid.toggleGroup(group.key)}
                                 style={{ paddingInlineStart: group.depth * 16 }}
-                                className="flex max-w-full items-center gap-1 rounded text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                className="flex max-w-full items-center gap-1 rounded text-start focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             >
                                 <Icon
                                     aria-hidden="true"
@@ -811,7 +814,7 @@ function DataRow<T>({
                 {...props}
                 className={cn(
                     'transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
-                    '[&>td:not(:last-child)]:border-r',
+                    '[&>td:not(:last-child)]:border-e',
                     props.className,
                 )}
             >
@@ -819,7 +822,7 @@ function DataRow<T>({
                     <td
                         role="gridcell"
                         className={control}
-                        style={{ position: 'sticky', left: 0, zIndex: 10 }}
+                        style={{ position: 'sticky', insetInlineStart: 0, zIndex: 10 }}
                     >
                         <input {...grid.getRowCheckboxProps(id, labels.selectRow(name))} />
                     </td>
@@ -830,7 +833,7 @@ function DataRow<T>({
                         className={cn(control, 'px-1')}
                         style={{
                             position: 'sticky',
-                            left: grid.showCheckboxes ? GRID_CONTROL_COLUMN_WIDTH : 0,
+                            insetInlineStart: grid.showCheckboxes ? GRID_CONTROL_COLUMN_WIDTH : 0,
                             zIndex: 10,
                         }}
                     >
@@ -925,7 +928,7 @@ function Cell<T>({
                 grid.preferences.values.density === 'compact' ? 'py-1.5' : 'py-3',
                 layout.pinned && 'bg-card in-data-[state=selected]:bg-muted',
                 layout.pinned === 'left' && 'shadow-[inset_-1px_0_0_var(--border)]',
-                column.align === 'right' && 'text-right tabular-nums',
+                column.align === 'right' && 'text-end tabular-nums',
             )}
         >
             {editing ? (
@@ -936,8 +939,8 @@ function Cell<T>({
                     aria-label={labels.edit(column.header, text)}
                     onClick={() => grid.startEdit(rowId, column.id)}
                     className={cn(
-                        '-mx-1 block w-full truncate rounded px-1 text-left hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                        column.align === 'right' && 'text-right',
+                        '-mx-1 block w-full truncate rounded px-1 text-start hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        column.align === 'right' && 'text-end',
                     )}
                 >
                     <span data-cell-content>{node}</span>

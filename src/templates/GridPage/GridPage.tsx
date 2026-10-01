@@ -98,9 +98,9 @@ export function GridPage<T>({
             className={cn(
                 'min-h-0 flex-1 overflow-auto',
                 '[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-muted',
-                '[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4',
+                '[&_td:first-child]:ps-4 [&_td:last-child]:pe-4 [&_th:first-child]:ps-4 [&_th:last-child]:pe-4',
                 // Lines between columns, as in a spreadsheet.
-                '[&_td]:border-border [&_td:not(:last-child)]:border-r [&_th]:border-border [&_th:not(:last-child)]:border-r',
+                '[&_td]:border-border [&_td:not(:last-child)]:border-e [&_th]:border-border [&_th:not(:last-child)]:border-e',
                 // Density: the grid sets row height, so pages never pad cells themselves.
                 'data-[density=comfortable]:[&_td]:py-3 data-[density=compact]:[&_td]:py-1.5 data-[density=compact]:[&_th]:h-8',
                 '[&_[data-slot=table-container]]:overflow-visible',
@@ -150,7 +150,7 @@ export function GridPage<T>({
                         </>
                     )}
                 </GridActions>
-                <div className="ml-auto flex shrink-0 items-center gap-1">
+                <div className="ms-auto flex shrink-0 items-center gap-1">
                     {search && (
                         <SearchField
                             collapsible

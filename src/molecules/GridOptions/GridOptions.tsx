@@ -98,7 +98,7 @@ export function GridOptions({
                             <span
                                 data-modified-dot=""
                                 aria-hidden="true"
-                                className="absolute top-1 right-1 size-2 rounded-full bg-primary"
+                                className="absolute end-1 top-1 size-2 rounded-full bg-primary"
                             />
                         )}
                     </Button>

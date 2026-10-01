@@ -61,7 +61,7 @@ function defaultFormatTime(iso: string): string {
 }
 
 const ROW =
-    'flex w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:bg-muted';
+    'flex w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-start transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:bg-muted';
 
 /**
  * A list of conversations, newest activity as the caller orders it. Each row

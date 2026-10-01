@@ -85,12 +85,12 @@ export function Combobox({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={placeholder ?? searchPlaceholder}
                     className={cn(
-                        'block w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none',
+                        'block w-full rounded-md border border-input bg-background px-3 py-2 pe-10 text-sm text-foreground shadow-sm focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none',
                         'aria-[invalid=true]:border-destructive',
                     )}
                 />
                 <ComboboxButton
-                    className="absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground focus:outline-none focus-visible:text-foreground"
+                    className="absolute inset-y-0 end-0 flex items-center px-2 text-muted-foreground focus:outline-none focus-visible:text-foreground"
                     // `searchPlaceholder` is OPTIONAL, so this button had no
                     // accessible name at all whenever a caller omitted it — an
                     // icon-only control with nothing to announce. Found by real-DOM

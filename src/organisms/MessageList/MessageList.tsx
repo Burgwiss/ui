@@ -280,7 +280,7 @@ export function MessageList({
                             <time
                                 dateTime={message.sentAt}
                                 className={cn(
-                                    'ml-2 inline-block translate-y-px align-baseline text-[11px] leading-none',
+                                    'ms-2 inline-block translate-y-px align-baseline text-[11px] leading-none',
                                     own ? 'text-primary-foreground' : 'text-muted-foreground',
                                 )}
                             >
@@ -345,8 +345,8 @@ export function MessageList({
                                             className={cn(
                                                 'max-w-full min-w-0 rounded-2xl px-3.5 py-2 text-sm',
                                                 own
-                                                    ? 'rounded-br-md bg-primary text-primary-foreground'
-                                                    : 'rounded-bl-md bg-muted text-foreground',
+                                                    ? 'rounded-ee-md bg-primary text-primary-foreground'
+                                                    : 'rounded-es-md bg-muted text-foreground',
                                                 // Quieted by colour, not opacity: opacity also fades the
                                                 // 11px time below AA (measured 3.52:1 in Chromium).
                                                 message.deleted &&
@@ -356,7 +356,7 @@ export function MessageList({
                                             {message.replyTo && (
                                                 <div
                                                     className={cn(
-                                                        'mb-1 rounded-md border-l-2 px-2 py-1 text-xs [overflow-wrap:anywhere] break-words',
+                                                        'mb-1 rounded-md border-s-2 px-2 py-1 text-xs [overflow-wrap:anywhere] break-words',
                                                         own
                                                             ? 'border-primary-foreground/60 bg-primary-foreground/20'
                                                             : 'border-foreground/30 bg-foreground/5',
@@ -405,7 +405,7 @@ export function MessageList({
                                                 <time
                                                     dateTime={message.sentAt}
                                                     className={cn(
-                                                        'mt-1 block text-right text-[11px] leading-none',
+                                                        'mt-1 block text-end text-[11px] leading-none',
                                                         own
                                                             ? 'text-primary-foreground'
                                                             : 'text-muted-foreground',

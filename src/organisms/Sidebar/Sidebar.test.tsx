@@ -127,11 +127,11 @@ describe('Sidebar', () => {
 
     it('puts the border and the handle on the inner edge', () => {
         const { rerender } = render(<Panel side="left" />);
-        expect(panel()).toHaveClass('border-r');
-        expect(handle()).toHaveClass('-right-1');
+        expect(panel()).toHaveClass('border-e');
+        expect(handle()).toHaveClass('-end-1');
         rerender(<Panel side="right" />);
-        expect(panel()).toHaveClass('border-l');
-        expect(handle()).toHaveClass('-left-1');
+        expect(panel()).toHaveClass('border-s');
+        expect(handle()).toHaveClass('-start-1');
     });
 });
 

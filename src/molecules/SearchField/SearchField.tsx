@@ -60,8 +60,8 @@ export function SearchField({
         >
             <Search
                 className={cn(
-                    'pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground',
-                    !expanded && 'left-2 text-foreground',
+                    'pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground',
+                    !expanded && 'start-2 text-foreground',
                 )}
                 aria-hidden="true"
             />
@@ -82,9 +82,9 @@ export function SearchField({
                 placeholder={placeholder}
                 aria-label={placeholder}
                 className={cn(
-                    'h-8 w-full pl-8',
+                    'h-8 w-full ps-8',
                     !expanded &&
-                        'cursor-pointer border-transparent pr-0 placeholder:text-transparent hover:bg-muted',
+                        'cursor-pointer border-transparent pe-0 placeholder:text-transparent hover:bg-muted',
                 )}
             />
         </div>

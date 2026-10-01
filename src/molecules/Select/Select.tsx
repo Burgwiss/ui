@@ -182,13 +182,13 @@ const SelectItem = React.forwardRef<
             ref={ref}
             data-slot="select-item"
             className={cn(
-                'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 ps-2 pe-8 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 itemFocusRing.real,
                 className,
             )}
             {...props}
         >
-            <span className="absolute right-2 flex size-4 items-center justify-center">
+            <span className="absolute end-2 flex size-4 items-center justify-center">
                 <SelectPrimitive.ItemIndicator>
                     <Check className="size-4" aria-hidden="true" />
                 </SelectPrimitive.ItemIndicator>

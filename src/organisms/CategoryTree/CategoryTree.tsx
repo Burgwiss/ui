@@ -28,6 +28,7 @@ import { IconButton } from '../../atoms/IconButton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../atoms/Tooltip';
 import { formatShortcut, type ShortcutLabels } from '../../hooks/shortcuts';
 import { cn } from '../../lib/cn';
+import { inlineArrows } from '../../lib/direction';
 import {
     canMove,
     descendantIds,
@@ -438,9 +439,7 @@ export function CategoryTree({
         const i = lines.findIndex((l) => l.node.id === id);
         const line = lines[i];
         if (!id || !line || line.draft) return;
-        const rtl = event.currentTarget.closest('[dir=rtl]') !== null;
-        const forward = rtl ? 'ArrowLeft' : 'ArrowRight';
-        const back = rtl ? 'ArrowRight' : 'ArrowLeft';
+        const { forward, back } = inlineArrows(event.currentTarget);
         const handled = () => {
             event.preventDefault();
             event.stopPropagation();

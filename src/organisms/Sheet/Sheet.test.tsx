@@ -94,8 +94,8 @@ describe('Sheet', () => {
     });
 
     it.each([
-        ['left', 'left-0', 'slide-in-from-left'],
-        ['right', 'right-0', 'slide-in-from-right'],
+        ['left', 'start-0', 'slide-in-from-start'],
+        ['right', 'end-0', 'slide-in-from-end'],
         ['top', 'top-0', 'slide-in-from-top'],
         ['bottom', 'bottom-0', 'slide-in-from-bottom'],
     ] as const)('side="%s" anchors to its edge and slides from it', (side, anchor, slide) => {
@@ -112,7 +112,7 @@ describe('Sheet', () => {
                 </SheetContent>
             </Sheet>,
         );
-        expect(content().className).toContain('slide-in-from-left');
+        expect(content().className).toContain('slide-in-from-start');
     });
 
     it('the bottom sheet is rounded on top and clears the home indicator', () => {

@@ -116,7 +116,7 @@ export function Conversation({
                 {onBack && labels.back && (
                     <IconButton
                         label={labels.back}
-                        icon={<ArrowLeft className="size-4" aria-hidden="true" />}
+                        icon={<ArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden="true" />}
                         onClick={onBack}
                         className="md:hidden"
                     />

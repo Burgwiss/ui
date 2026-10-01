@@ -114,6 +114,18 @@ describe('ChipRow', () => {
         expect(all).toHaveFocus();
     });
 
+    it('mirrors the arrows right-to-left: ← moves forward, → back', async () => {
+        const user = userEvent.setup();
+        const { all, arabic } = setup();
+        all.closest('[role=group]')!.setAttribute('dir', 'rtl');
+        all.focus();
+
+        await user.keyboard('{ArrowLeft}');
+        expect(arabic).toHaveFocus();
+        await user.keyboard('{ArrowRight}');
+        expect(all).toHaveFocus();
+    });
+
     it('keeps a single tab stop that follows focus', async () => {
         const user = userEvent.setup();
         const { all, arabic, quran } = setup();

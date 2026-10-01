@@ -227,7 +227,7 @@ export function ChatComposer({
                     {files.map((file, index) => (
                         <li
                             key={`${file.name}-${index}`}
-                            className="flex items-center gap-1 rounded-md border border-border bg-card py-1 pr-1 pl-2 text-xs"
+                            className="flex items-center gap-1 rounded-md border border-border bg-card py-1 ps-2 pe-1 text-xs"
                         >
                             <span className="max-w-[12rem] truncate text-foreground">
                                 {file.name}

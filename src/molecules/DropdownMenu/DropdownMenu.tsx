@@ -98,7 +98,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
             data-slot="dropdown-menu-checkbox-item"
             checked={checked}
             className={cn(
-                'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm text-foreground transition-colors outline-none select-none',
+                'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-sm text-foreground transition-colors outline-none select-none',
                 'focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground',
                 itemFocusRing.real,
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
@@ -106,7 +106,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
             )}
             {...props}
         >
-            <span className="absolute left-2 flex size-4 items-center justify-center">
+            <span className="absolute start-2 flex size-4 items-center justify-center">
                 <DropdownMenuPrimitive.ItemIndicator>
                     <Check className="size-4" aria-hidden="true" />
                 </DropdownMenuPrimitive.ItemIndicator>
@@ -134,7 +134,7 @@ const DropdownMenuRadioItem = React.forwardRef<
             ref={ref}
             data-slot="dropdown-menu-radio-item"
             className={cn(
-                'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm text-foreground transition-colors outline-none select-none',
+                'relative flex cursor-pointer items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-sm text-foreground transition-colors outline-none select-none',
                 'focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground',
                 itemFocusRing.real,
                 'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
@@ -142,7 +142,7 @@ const DropdownMenuRadioItem = React.forwardRef<
             )}
             {...props}
         >
-            <span className="absolute left-2 flex size-4 items-center justify-center">
+            <span className="absolute start-2 flex size-4 items-center justify-center">
                 <DropdownMenuPrimitive.ItemIndicator>
                     <Circle className="size-2 fill-current" aria-hidden="true" />
                 </DropdownMenuPrimitive.ItemIndicator>
@@ -176,7 +176,10 @@ const DropdownMenuSubTrigger = React.forwardRef<
             {...props}
         >
             {children}
-            <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+            <ChevronRight
+                className="ms-auto size-4 text-muted-foreground rtl:-scale-x-100"
+                aria-hidden="true"
+            />
         </DropdownMenuPrimitive.SubTrigger>
     );
 });
@@ -210,7 +213,7 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'spa
         <span
             data-slot="dropdown-menu-shortcut"
             aria-hidden="true"
-            className={cn('ml-auto pl-4 text-xs text-muted-foreground', className)}
+            className={cn('ms-auto ps-4 text-xs text-muted-foreground', className)}
             {...props}
         />
     );

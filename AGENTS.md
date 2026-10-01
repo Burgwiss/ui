@@ -47,7 +47,7 @@ index.ts             export * from './<Name>'
 
 …and one line in `src/index.ts` under its level.
 
-## The rules (ESLint enforces 1–3 and the no-`title` half of 4, the test suite proves ESLint does)
+## The rules (ESLint enforces 1–3, the no-`title` half of 4 and 8, the test suite proves ESLint does)
 
 1. **No app inside.** No router (`@inertiajs/*`, `react-router`, ziggy), no
    translation system, no HTTP, no `@/` app aliases. Links and actions come in
@@ -70,6 +70,12 @@ index.ts             export * from './<Name>'
    only makes sense for one page, it belongs in that app.
 7. **Breaking changes are deliberate.** Removing or renaming an export, a prop,
    or a CSS variable is a major version. Say so in the commit.
+8. **Right-to-left works.** Logical classes only (`ms-`, `pe-`, `start-`,
+   `border-e`, `text-start`, `rounded-es-`) — ESLint rejects the physical ones.
+   Directional icons get `rtl:-scale-x-100`; your own arrow-key or pointer maths
+   asks `isRtl(el)` / `inlineArrows(el)`. Apps wrap their root in
+   `DirectionProvider`, because Radix ignores `<html dir>`. Guide:
+   `src/docs/RightToLeft.mdx` (Storybook: Richtlinien → Rechts nach links).
 
 ## Storybook for coding agents (MCP)
 

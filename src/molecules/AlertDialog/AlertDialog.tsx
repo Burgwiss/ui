@@ -79,7 +79,7 @@ const AlertDialogHeader = React.forwardRef<HTMLDivElement, React.ComponentPropsW
             <div
                 ref={ref}
                 data-slot="alert-dialog-header"
-                className={cn('flex flex-col gap-2 text-left', className)}
+                className={cn('flex flex-col gap-2 text-start', className)}
                 {...props}
             />
         );

@@ -27,6 +27,7 @@ import {
 
 import { Button } from '../../atoms/Button';
 import { cn } from '../../lib/cn';
+import { isRtl } from '../../lib/direction';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -572,7 +573,7 @@ function Player({
         const prev = lastTap.current;
         lastTap.current = { t: now, x };
         if (prev && now - prev.t < 300 && Math.abs(prev.x - x) < 60) {
-            const rtl = rootRef.current?.closest('[dir=rtl]') !== null;
+            const rtl = isRtl(rootRef.current);
             const left = x < rect.width / 3;
             const right = x > (rect.width * 2) / 3;
             if (left || right) {
@@ -1030,7 +1031,7 @@ function Player({
                                                 seekTo(c.start);
                                                 play();
                                             }}
-                                            className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-[current=true]:bg-muted aria-[current=true]:font-medium"
+                                            className="flex w-full items-center gap-3 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-[current=true]:bg-muted aria-[current=true]:font-medium"
                                         >
                                             <span
                                                 className="w-14 shrink-0 text-muted-foreground tabular-nums"
@@ -1153,12 +1154,12 @@ function Timeline({
             >
                 <div className="relative h-1 w-full overflow-hidden rounded-full bg-video-foreground/20 transition-[height] group-hover/tl:h-1.5">
                     <div
-                        className="absolute inset-y-0 left-0 bg-video-foreground/40"
+                        className="absolute inset-y-0 start-0 bg-video-foreground/40"
                         style={{ width: pct(buffered) }}
                     />
                     {/* On-video white, not the brand colour: a dark school colour vanishes on video. */}
                     <div
-                        className="absolute inset-y-0 left-0 bg-video-foreground"
+                        className="absolute inset-y-0 start-0 bg-video-foreground"
                         style={{ width: pct(time) }}
                     />
                     {/* Chapter boundaries: a gap in the track, as on YouTube. */}

@@ -5,7 +5,7 @@ import { cn } from '../../lib/cn';
 export interface SidebarLayoutProps {
     /** Usually a `Sidebar`. It sits on the `side` edge. */
     sidebar: ReactNode;
-    /** Default `'left'`. Pass the same side to the `Sidebar` so its resize handle faces the main area. */
+    /** Default `'left'` — the start edge, so the right under `dir="rtl"`. Pass the same side to the `Sidebar` so its resize handle faces the main area. */
     side?: 'left' | 'right';
     /** The main area. Scrolls on its own; the sidebar stays put. */
     children: ReactNode;

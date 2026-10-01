@@ -3,7 +3,16 @@ import { useEffect, type ReactNode } from 'react';
 
 import './storybook.css';
 
-import { applyLocale, DEFAULT_LOCALE, LocaleProvider, LOCALES, type StoryLocale } from './locale';
+import { DirectionProvider } from '../src/lib/direction';
+
+import {
+    applyLocale,
+    DEFAULT_LOCALE,
+    LocaleProvider,
+    LOCALES,
+    localeDir,
+    type StoryLocale,
+} from './locale';
 import { applyTheme, DEFAULT_THEME, installThemeStyles, THEMES } from './themes/themes';
 
 /**
@@ -29,7 +38,13 @@ function ThemeFrame({
         applyTheme(document.documentElement, theme, mode === 'dark');
         applyLocale(document.documentElement, locale);
     }, [mode, theme, locale]);
-    return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
+    // Radix reads direction from context, not from <html dir>: without this the
+    // Arabic toolbar flips the layout but leaves menus and arrow keys LTR.
+    return (
+        <LocaleProvider locale={locale}>
+            <DirectionProvider dir={localeDir(locale)}>{children}</DirectionProvider>
+        </LocaleProvider>
+    );
 }
 
 const withTheme: Decorator = (Story, context) => (

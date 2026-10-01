@@ -280,9 +280,22 @@ describe('DataGrid — pinned columns', () => {
         render(<Harness />);
         act(() => grid.pinColumn('price', 'left'));
         const th = screen.getByRole('columnheader', { name: /Preis/ });
-        expect(th).toHaveStyle({ position: 'sticky', left: '40px' });
+        // Logical, so a left-pinned column sticks at the START edge — the
+        // right in a right-to-left grid.
+        expect(th.style.position).toBe('sticky');
+        expect(th.style.insetInlineStart).toBe('40px');
+        expect(th.style.left).toBe('');
         const cell = screen.getByText('120 €').closest('td')!;
-        expect(cell).toHaveStyle({ position: 'sticky', left: '40px' });
+        expect(cell.style.insetInlineStart).toBe('40px');
+    });
+
+    it('sticks a right-pinned column at the end edge', () => {
+        render(<Harness />);
+        act(() => grid.pinColumn('price', 'right'));
+        const th = screen.getByRole('columnheader', { name: /Preis/ });
+        expect(th.style.position).toBe('sticky');
+        expect(th.style.insetInlineEnd).toBe('0px');
+        expect(th.style.right).toBe('');
     });
 });
 

@@ -42,6 +42,11 @@ export function useStoryText() {
     return <T,>(texts: Localized<T>) => pick(texts, locale);
 }
 
+/** The writing direction of a toolbar language. */
+export function localeDir(locale: StoryLocale): 'ltr' | 'rtl' {
+    return (LOCALES.find((l) => l.id === locale) ?? LOCALES[0]).dir;
+}
+
 export function applyLocale(el: HTMLElement, locale: StoryLocale): void {
     const entry = LOCALES.find((l) => l.id === locale) ?? LOCALES[0];
     el.lang = entry.id;

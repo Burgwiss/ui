@@ -37,7 +37,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                 <Input
                     ref={ref}
                     type={visible ? 'text' : 'password'}
-                    className={cn('pr-10', className)}
+                    className={cn('pe-10', className)}
                     {...props}
                 />
                 <IconButton
@@ -51,7 +51,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                             <Eye className="size-4" aria-hidden="true" />
                         )
                     }
-                    className="absolute inset-y-0 right-0 my-auto mr-1 h-7 w-7"
+                    className="absolute inset-y-0 end-0 my-auto me-1 h-7 w-7"
                 />
             </div>
         );

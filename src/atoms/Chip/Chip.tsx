@@ -2,6 +2,7 @@ import { Check } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../../lib/cn';
+import { inlineArrows } from '../../lib/direction';
 
 /** Shared pill look for both chip modes (single + multi). */
 const chipClass = (active: boolean) =>
@@ -136,12 +137,20 @@ export function ChipRow({ children, ariaLabel, className, ...props }: ChipRowPro
             return;
         }
         let next = active;
-        switch (e.key) {
-            case 'ArrowRight':
+        // Forward is → in left-to-right and ← in right-to-left.
+        const { forward } = inlineArrows(e.currentTarget);
+        const key =
+            e.key === 'ArrowLeft' || e.key === 'ArrowRight'
+                ? e.key === forward
+                    ? 'next'
+                    : 'prev'
+                : e.key;
+        switch (key) {
+            case 'next':
             case 'ArrowDown':
                 next = Math.min(items.length - 1, active + 1);
                 break;
-            case 'ArrowLeft':
+            case 'prev':
             case 'ArrowUp':
                 next = Math.max(0, active - 1);
                 break;

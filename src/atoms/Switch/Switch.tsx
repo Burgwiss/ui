@@ -35,6 +35,8 @@ const Switch = React.forwardRef<
                 className={cn(
                     'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-md ring-0 transition-transform',
                     'data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0',
+                    // The thumb travels toward the end edge: leftward in right-to-left.
+                    'rtl:data-[state=checked]:-translate-x-4',
                 )}
             />
         </SwitchPrimitive.Root>

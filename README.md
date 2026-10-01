@@ -37,6 +37,10 @@ In the app's main CSS:
 import { Button, GridPage, SearchField } from '@burgwiss/ui';
 ```
 
+**Right-to-left:** set `dir` on `<html>` and wrap the app once in
+`<DirectionProvider dir="rtl">` (exported from the package) — Radix menus and
+arrow keys read direction from it, not from the attribute.
+
 **Theme:** override the CSS variables from `src/tokens/theme.css` on `:root`
 (e.g. `--primary`). That is the only way to theme — components never take colours.
 Dark mode is the `.dark` class on an ancestor.

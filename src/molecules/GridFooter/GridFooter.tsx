@@ -24,18 +24,18 @@ export function GridFooter({ summary, onPrev, onNext, labels }: GridFooterProps)
     return (
         <>
             <p className="text-sm text-muted-foreground tabular-nums">{summary}</p>
-            <nav aria-label={labels.pager} className="ml-auto flex items-center gap-1">
+            <nav aria-label={labels.pager} className="ms-auto flex items-center gap-1">
                 <IconButton
                     label={labels.previous}
                     disabled={!onPrev}
                     onClick={onPrev ?? undefined}
-                    icon={<ChevronLeft className="size-4" aria-hidden="true" />}
+                    icon={<ChevronLeft className="size-4 rtl:-scale-x-100" aria-hidden="true" />}
                 />
                 <IconButton
                     label={labels.next}
                     disabled={!onNext}
                     onClick={onNext ?? undefined}
-                    icon={<ChevronRight className="size-4" aria-hidden="true" />}
+                    icon={<ChevronRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />}
                 />
             </nav>
         </>

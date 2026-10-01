@@ -134,7 +134,7 @@ export function GridFilterChips({
                     <li key={chip.id}>
                         <Badge
                             variant="outline"
-                            className="h-7 gap-1 pr-1 pl-2.5 text-sm font-normal"
+                            className="h-7 gap-1 ps-2.5 pe-1 text-sm font-normal"
                         >
                             {onEdit ? (
                                 <button

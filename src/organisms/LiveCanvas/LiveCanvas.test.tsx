@@ -88,6 +88,21 @@ describe('LiveCanvas', () => {
         expect(onSelect).toHaveBeenLastCalledWith(null);
     });
 
+    it('mirrors the arrows right-to-left: ← moves forward', async () => {
+        const user = userEvent.setup();
+        render(
+            <div dir="rtl">
+                <Harness />
+            </div>,
+        );
+        await user.tab();
+        const list = screen.getByRole('listbox');
+        await user.keyboard('{ArrowLeft}');
+        expect(list.getAttribute('aria-activedescendant')).toBe(option('Hauptknopf').id);
+        await user.keyboard('{ArrowLeft}{ArrowRight}');
+        expect(list.getAttribute('aria-activedescendant')).toBe(option('Hauptknopf').id);
+    });
+
     it('wraps around and jumps with Home and End', async () => {
         const user = userEvent.setup();
         render(<Harness />);

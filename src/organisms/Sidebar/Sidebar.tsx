@@ -9,6 +9,7 @@ import {
 
 import { useResizableWidth } from '../../hooks/useResizableWidth';
 import { cn } from '../../lib/cn';
+import { isRtl } from '../../lib/direction';
 
 /** Which edge of the layout a `Sidebar` is docked to. */
 export type SidebarSide = 'left' | 'right';
@@ -16,7 +17,7 @@ export type SidebarSide = 'left' | 'right';
 export interface SidebarProps {
     /** The panel's accessible name. */
     label: string;
-    /** Which edge of the layout the panel sits on. The resize handle goes on the other edge. */
+    /** Which edge of the layout the panel sits on: `left` is the start edge, so it is the right under `dir="rtl"`. The resize handle goes on the other edge. */
     side?: SidebarSide;
     /**
      * Makes the panel resizable. `label` names the handle for screen readers,
@@ -84,8 +85,8 @@ export function Sidebar({
             className={cn(
                 'relative flex h-full shrink-0 flex-col bg-sidebar text-sidebar-foreground',
                 side === 'left'
-                    ? 'border-r border-sidebar-border'
-                    : 'border-l border-sidebar-border',
+                    ? 'border-e border-sidebar-border'
+                    : 'border-s border-sidebar-border',
                 className,
             )}
         >
@@ -104,21 +105,22 @@ function SidebarResizeHandle({
     label: string;
     size: ReturnType<typeof useResizableWidth>;
 }) {
-    const drag = useRef<{ x: number; width: number } | null>(null);
-    // Dragging toward the page grows the panel: right for a left panel, left for a right one.
-    const grow = side === 'left' ? 1 : -1;
+    const drag = useRef<{ x: number; width: number; grow: 1 | -1 } | null>(null);
+    // Dragging toward the page grows the panel: for a start panel that is rightward
+    // in left-to-right and leftward in right-to-left; an end panel the opposite.
+    const growFor = (el: Element): 1 | -1 => ((side === 'left') !== isRtl(el) ? 1 : -1);
 
     const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
         if (event.button !== 0) return;
         event.preventDefault();
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        drag.current = { x: event.clientX, width: size.width };
+        drag.current = { x: event.clientX, width: size.width, grow: growFor(event.currentTarget) };
         document.body.style.setProperty('cursor', 'col-resize');
         document.body.style.setProperty('user-select', 'none');
     };
     const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
         if (!drag.current) return;
-        size.setWidth(drag.current.width + (event.clientX - drag.current.x) * grow);
+        size.setWidth(drag.current.width + (event.clientX - drag.current.x) * drag.current.grow);
     };
     const onPointerUp = () => {
         drag.current = null;
@@ -127,6 +129,7 @@ function SidebarResizeHandle({
     };
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         const step = event.shiftKey ? BIG_STEP : STEP;
+        const grow = growFor(event.currentTarget);
         const keys: Record<string, () => void> = {
             ArrowRight: () => size.setWidth(size.width + step * grow),
             ArrowLeft: () => size.setWidth(size.width - step * grow),
@@ -162,7 +165,7 @@ function SidebarResizeHandle({
             onKeyDown={onKeyDown}
             className={cn(
                 'group absolute inset-y-0 z-20 w-2 cursor-col-resize outline-none',
-                side === 'left' ? '-right-1' : '-left-1',
+                side === 'left' ? '-end-1' : '-start-1',
             )}
         >
             <span
@@ -262,7 +265,7 @@ export function SidebarMenuButton({
             data-active={active}
             aria-current={active ? 'page' : undefined}
             className={cn(
-                'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm transition-colors outline-none',
+                'flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm transition-colors outline-none',
                 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 'focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                 'data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground',

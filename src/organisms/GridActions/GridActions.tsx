@@ -203,7 +203,7 @@ function GridActionButton({
             <span className="flex items-center gap-3">
                 <span className="font-medium">{item.label}</span>
                 {item.shortcut && (
-                    <kbd className="ml-auto font-sans text-muted-foreground">
+                    <kbd className="ms-auto font-sans text-muted-foreground">
                         {formatShortcut(item.shortcut, shortcutLabels)}
                     </kbd>
                 )}

@@ -1,5 +1,6 @@
 // @burgwiss/ui — public API. Ordered by atomic level.
 export { cn } from './lib/cn';
+export { DirectionProvider, inlineArrows, isRtl, useDirection, type Dir } from './lib/direction';
 export { downloadText } from './lib/download';
 export * from './lib/tree';
 export {

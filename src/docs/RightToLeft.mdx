@@ -1,0 +1,53 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Richtlinien/Rechts nach links" />
+
+# Rechts nach links (RTL)
+
+Jede Komponente funktioniert von rechts nach links — für Arabisch, Hebräisch,
+Persisch, Urdu. Probier es mit der Toolbar **Sprache → العربية**: das Layout
+spiegelt sich, Menüs öffnen zur anderen Seite, die Pfeiltasten laufen mit.
+
+## In der App einrichten
+
+Zwei Dinge, beide einmal an der Wurzel, beide mit demselben Wert:
+
+```tsx
+import { DirectionProvider } from '@burgwiss/ui';
+
+// <html lang="ar" dir="rtl"> — setzt die App für das Layout
+<DirectionProvider dir={locale.dir}>
+    <App />
+</DirectionProvider>;
+```
+
+- **`dir` auf `<html>`** spiegelt das Layout. Alle Komponenten benutzen logische
+  Klassen (`ms-*`, `ps-*`, `start-*`, `border-e`, `text-start`), die dem `dir`
+  folgen.
+- **`DirectionProvider`** ist für die Radix-Bausteine (Menüs, Select, Tabs,
+  RadioGroup …). Radix liest das `dir`-Attribut **nicht** — ohne Provider
+  bleiben Untermenüs und Pfeiltasten links-nach-rechts, obwohl alles andere
+  gespiegelt ist.
+
+## Was sich spiegelt — und was nicht
+
+| Spiegelt sich                                                                      | Bleibt links-nach-rechts                                               |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Abstände, Ränder, Ecken, Textausrichtung                                           | Zentrierte Overlays (Dialog) — sind symmetrisch                        |
+| `side="left"` an Sidebar, SidebarLayout, Sheet: die **Anfangs**-Kante, also rechts | Die Zeitleiste im VideoPlayer — Zeit läuft in jedem Player nach rechts |
+| Pfeile für vor/zurück (Pager, Breadcrumb, Untermenü, Zurück)                       | Symbole ohne Richtung (Suchen, Schließen, Häkchen)                     |
+| ←/→ in Listen, Bäumen, Chips, Größenänderung                                       | Zeitstempel und Zahlen (`dir="ltr"`-Inseln)                            |
+
+## Regeln für neue Komponenten
+
+- **Nur logische Klassen.** ESLint (`local/no-physical-direction`) lehnt `ml-`,
+  `pr-`, `left-0`, `text-left`, `border-r`, `rounded-bl-*` und
+  `slide-in-from-left` ab. Erlaubt: Zentrieren (`left-1/2 -translate-x-1/2`)
+  und alles hinter `rtl:` / `ltr:`.
+- **Richtungs-Icons spiegeln:** `className="rtl:-scale-x-100"`.
+- **Eigene Pfeiltasten- oder Zeiger-Mathematik** fragt im Moment des Ereignisses
+  `isRtl(element)` oder `inlineArrows(element)` — das nächste `dir` gewinnt,
+  sodass eine `dir="ltr"`-Insel in einer RTL-Seite richtig antwortet.
+- **Mit Layout testen:** jsdom kennt kein Layout. Ob gespiegelt wirklich
+  gespiegelt ist, misst ein `*.browser.test.tsx` in Chromium — siehe
+  `src/lib/rtl.browser.test.tsx`.

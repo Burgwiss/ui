@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { cn } from '../../lib/cn';
+import { inlineArrows } from '../../lib/direction';
 
 interface CanvasContext {
     baseId: string;
@@ -91,12 +92,20 @@ export function LiveCanvas({
             setActive(el.dataset.target);
             el.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         };
-        switch (event.key) {
+        // Forward is → in left-to-right and ← in right-to-left.
+        const { forward } = inlineArrows(event.currentTarget);
+        const key =
+            event.key === 'ArrowLeft' || event.key === 'ArrowRight'
+                ? event.key === forward
+                    ? 'next'
+                    : 'prev'
+                : event.key;
+        switch (key) {
             case 'ArrowDown':
-            case 'ArrowRight':
+            case 'next':
                 return go(index < 0 ? 0 : index + 1);
             case 'ArrowUp':
-            case 'ArrowLeft':
+            case 'prev':
                 return go(index < 0 ? all.length - 1 : index - 1);
             case 'Home':
                 return go(0);

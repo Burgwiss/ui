@@ -70,9 +70,11 @@ const SheetOverlay = React.forwardRef<
 });
 SheetOverlay.displayName = 'SheetOverlay';
 
+// `left` and `right` are the START and END edges: under `dir="rtl"` a `left`
+// sheet slides in from the right, mirroring the whole layout.
 const SIDE_CLASSES = {
-    left: 'inset-y-0 left-0 h-full w-72 max-w-[85vw] border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
-    right: 'inset-y-0 right-0 h-full w-72 max-w-[85vw] border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
+    left: 'inset-y-0 start-0 h-full w-72 max-w-[85vw] border-e data-[state=closed]:slide-out-to-start data-[state=open]:slide-in-from-start',
+    right: 'inset-y-0 end-0 h-full w-72 max-w-[85vw] border-s data-[state=closed]:slide-out-to-end data-[state=open]:slide-in-from-end',
     // Mobile bottom sheet (auth, class-select). Rounded
     // top, slides up, and clears the home indicator via the safe-area inset.
     bottom: 'inset-x-0 bottom-0 w-full max-h-[90vh] rounded-t-2xl border-t pb-[max(1rem,env(safe-area-inset-bottom))] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
@@ -106,7 +108,7 @@ type SheetCloseProps =
       };
 
 export type SheetContentProps = React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> & {
-    /** Which screen edge the panel slides from: `left` (default), `right`, `bottom` or `top`. */
+    /** Which screen edge the panel slides from: `left` (default), `right`, `bottom` or `top`. `left`/`right` mean the start/end edge, so they swap in right-to-left. */
     side?: keyof typeof SIDE_CLASSES;
     /** Render a drag-handle affordance (typically with side="bottom"). */
     showHandle?: boolean;
@@ -154,7 +156,7 @@ const SheetContent = React.forwardRef<
                 {showClose && (
                     <SheetPrimitive.Close
                         aria-label={closeLabel}
-                        className="absolute top-3 right-3 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+                        className="absolute end-3 top-3 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
                     >
                         <X className="h-4 w-4" aria-hidden="true" />
                     </SheetPrimitive.Close>

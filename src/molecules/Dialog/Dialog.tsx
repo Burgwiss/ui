@@ -89,7 +89,7 @@ const DialogContent = React.forwardRef<
             {children}
             <DialogPrimitive.Close
                 aria-label={closeLabel}
-                className="absolute top-3 right-3 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+                className="absolute end-3 top-3 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
             >
                 <X className="h-4 w-4" aria-hidden="true" />
             </DialogPrimitive.Close>
@@ -103,7 +103,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
     return (
         <div
             data-slot="dialog-header"
-            className={cn('flex flex-col gap-2 text-left', className)}
+            className={cn('flex flex-col gap-2 text-start', className)}
             {...props}
         />
     );
