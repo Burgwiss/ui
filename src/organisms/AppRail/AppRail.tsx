@@ -60,8 +60,10 @@ export function AppRailSpacer() {
     return <div aria-hidden="true" className="flex-1" />;
 }
 
-export interface AppRailItemProps
-    extends Omit<ComponentPropsWithoutRef<'button'>, 'children' | 'onClick' | 'type'> {
+export interface AppRailItemProps extends Omit<
+    ComponentPropsWithoutRef<'button'>,
+    'children' | 'onClick' | 'type'
+> {
     /** Icon component (e.g. a lucide icon); it is rendered decorative (`aria-hidden`), the `label` names the item. */
     icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' }>;
     /** Shown under the icon and in the tooltip. Short: the rail is 68px wide. */
@@ -101,7 +103,12 @@ export const AppRailItem = forwardRef<HTMLElement, AppRailItemProps>(function Ap
     const content = (
         <>
             <Icon className="size-5" aria-hidden="true" />
-            <span className="max-w-full truncate px-0.5">{label}</span>
+            {/* Long labels ("Kommunikation") hyphenate onto a second line by the
+                page's language instead of being cut off; the tooltip still carries
+                the full name. */}
+            <span className="line-clamp-2 max-w-full px-0.5 text-center leading-tight break-words hyphens-auto">
+                {label}
+            </span>
         </>
     );
     const Link = as ?? 'a';
