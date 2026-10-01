@@ -28,6 +28,7 @@ export default tseslint.config(
             'local/no-raw-tailwind-colors': 'error',
             'local/no-tint-on-tint-foreground': 'error',
             'local/icon-button-needs-label': 'error',
+            'local/no-title-on-controls': 'error',
         },
     },
     {

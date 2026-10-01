@@ -47,7 +47,7 @@ index.ts             export * from './<Name>'
 
 …and one line in `src/index.ts` under its level.
 
-## The rules (ESLint enforces 1–3, the test suite proves ESLint does)
+## The rules (ESLint enforces 1–3 and the no-`title` half of 4, the test suite proves ESLint does)
 
 1. **No app inside.** No router (`@inertiajs/*`, `react-router`, ziggy), no
    translation system, no HTTP, no `@/` app aliases. Links and actions come in
