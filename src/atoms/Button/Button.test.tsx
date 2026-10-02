@@ -343,3 +343,17 @@ describe('Button — tooltip', () => {
         expect(await screen.findByRole('tooltip')).toHaveTextContent('Öffnet die Kursseite');
     });
 });
+
+describe('Button — link variant', () => {
+    // `--primary` is each app's (or school's) colour, so small text in it has
+    // no contrast guarantee. The text is the body colour; the brand rides on
+    // the underline, which is there at rest so colour never carries "link"
+    // alone (WCAG 1.4.1).
+    it('keeps its text out of the brand colour and underlines it at rest', () => {
+        render(<Button variant="link">Mehr erfahren</Button>);
+        const button = screen.getByRole('button', { name: 'Mehr erfahren' });
+        const classes = button.className.split(/\s+/);
+        expect(classes.some((c) => /^([a-z-]+:)*text-primary$/.test(c))).toBe(false);
+        expect(button).toHaveClass('text-foreground', 'underline', 'decoration-primary');
+    });
+});

@@ -21,7 +21,10 @@ const buttonVariants = cva(
                 // with white text for accessible contrast at every state.
                 destructive:
                     'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
-                link: 'text-primary underline-offset-4 hover:underline',
+                // Body-coloured text, brand-coloured underline: `--primary` is each
+                // app's (or school's) colour, so small text in it can fall under
+                // 4.5:1. The underline carries the brand instead.
+                link: 'text-foreground underline decoration-primary underline-offset-4 hover:decoration-2',
             },
             size: {
                 // `pointer-coarse:min-h-11` (and `min-w-11` for the square icon
