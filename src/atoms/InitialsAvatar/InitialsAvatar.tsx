@@ -41,24 +41,24 @@ function hueFromName(name: string): number {
  * show the name as text next to it. When you do have an image use `Avatar`.
  * SSR-safe (no window/document). With `colored`, the disc takes a soft per-name
  * tint + a darker same-hue text: contrast comes from the fixed lightness gap
- * (90 vs 30), so it stays AA-legible for every hue without depending on the
+ * (90 vs 26: at least 5.3:1 for every hue — 30 gave 4.27:1 at yellow-green, hue 60), so it stays AA-legible for every hue without depending on the
  * theme. Decorative — the visible name carries the meaning, so it's
  * `aria-hidden`.
  *
  * @summary Round initials badge for a person without a photo; decorative, so show the name beside it.
  */
+/** The disc and text colours for one hue — exported so a test can check every hue. */
+export function avatarTint(hue: number): { backgroundColor: string; color: string } {
+    return { backgroundColor: `hsl(${hue} 60% 90%)`, color: `hsl(${hue} 55% 26%)` };
+}
+
 export function InitialsAvatar({
     name,
     size = 'md',
     colored = false,
     className,
 }: InitialsAvatarProps) {
-    const tint = colored
-        ? (() => {
-              const hue = hueFromName(name);
-              return { backgroundColor: `hsl(${hue} 60% 90%)`, color: `hsl(${hue} 55% 30%)` };
-          })()
-        : undefined;
+    const tint = colored ? avatarTint(hueFromName(name)) : undefined;
 
     return (
         <div

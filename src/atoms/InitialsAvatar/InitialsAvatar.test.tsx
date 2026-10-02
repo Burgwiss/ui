@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { InitialsAvatar } from './InitialsAvatar';
+import { avatarTint, InitialsAvatar } from './InitialsAvatar';
 
 const disc = () => screen.getByTestId('initials-avatar');
 
@@ -70,5 +70,31 @@ describe('InitialsAvatar', () => {
     it('is decorative for assistive tech', () => {
         render(<InitialsAvatar name="Ada Lovelace" />);
         expect(disc()).toHaveAttribute('aria-hidden', 'true');
+    });
+});
+
+// WCAG relative luminance of an `hsl(h s% l%)` colour.
+function luminance(css: string): number {
+    const [h, s, l] = css.match(/[\d.]+/g)!.map(Number) as [number, number, number];
+    const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12;
+        return l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    };
+    const lin = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * lin(f(0)) + 0.7152 * lin(f(8)) + 0.0722 * lin(f(4));
+}
+
+describe('InitialsAvatar colored contrast', () => {
+    it('keeps the initials at AA contrast on their tint for every hue', () => {
+        // The gate once failed on "MM" at 4.34:1 (hue ~60) with 30% text.
+        let worst = { ratio: Infinity, hue: -1 };
+        for (let hue = 0; hue < 360; hue++) {
+            const { backgroundColor, color } = avatarTint(hue);
+            const [bg, fg] = [luminance(backgroundColor), luminance(color)];
+            const ratio = (Math.max(bg, fg) + 0.05) / (Math.min(bg, fg) + 0.05);
+            if (ratio < worst.ratio) worst = { ratio, hue };
+        }
+        expect(worst.ratio, `worst hue ${worst.hue}`).toBeGreaterThanOrEqual(4.5);
     });
 });
