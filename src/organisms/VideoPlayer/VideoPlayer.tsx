@@ -615,7 +615,9 @@ function Player({
                 onPointerMove={wake}
                 onFocus={wake}
                 className={cn(
-                    'group/player relative isolate aspect-video w-full overflow-hidden rounded-xl bg-video-surface text-video-foreground shadow-lg',
+                    // `@container`: the control row fits the PLAYER's width, not the
+                    // viewport's, so a player in a side column behaves like one on a phone.
+                    'group/player @container relative isolate aspect-video w-full overflow-hidden rounded-xl bg-video-surface text-video-foreground shadow-lg',
                     fullscreen && 'rounded-none',
                     !controlsVisible && 'cursor-none',
                 )}
@@ -839,7 +841,9 @@ function Player({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className={controlButton}
+                                // Under 20rem the row has no room; double-tap the sides instead.
+                                className={cn(controlButton, '@max-xs:hidden')}
+                                data-control="back10"
                                 aria-label={labels.back10}
                                 aria-keyshortcuts="j"
                                 onClick={() => run({ type: 'seekBy', seconds: -10 })}
@@ -849,7 +853,9 @@ function Player({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className={controlButton}
+                                // Under 20rem the row has no room; double-tap the sides instead.
+                                className={cn(controlButton, '@max-xs:hidden')}
+                                data-control="forward10"
                                 aria-label={labels.forward10}
                                 aria-keyshortcuts="l"
                                 onClick={() => run({ type: 'seekBy', seconds: 10 })}
@@ -883,7 +889,11 @@ function Player({
                                 className="ms-2 text-sm text-video-foreground/90 tabular-nums"
                                 dir="ltr"
                             >
-                                {formatTime(time, duration)} / {formatTime(duration, duration)}
+                                {formatTime(time, duration)}
+                                <span className="@max-md:hidden">
+                                    {' / '}
+                                    {formatTime(duration, duration)}
+                                </span>
                             </span>
                             {currentChapter && (
                                 <span className="ms-3 hidden min-w-0 truncate text-sm text-video-foreground/80 sm:inline">
@@ -965,7 +975,10 @@ function Player({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className={controlButton}
+                                        // A phone-width player has no room, and phones
+                                        // offer picture-in-picture from fullscreen.
+                                        className={cn(controlButton, '@max-md:hidden')}
+                                        data-control="pip"
                                         aria-label={labels.pictureInPicture}
                                         onClick={() => void togglePip()}
                                     >
