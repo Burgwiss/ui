@@ -20,9 +20,9 @@ const waitFor = async (check: () => boolean, ms = 4000) => {
     }
 };
 
-function mount(extra: Partial<Parameters<typeof VideoPlayer>[0]> = {}) {
+function mount(extra: Partial<Parameters<typeof VideoPlayer>[0]> = {}, width = 800) {
     render(
-        <div style={{ width: 800 }}>
+        <div style={{ width }}>
             <VideoPlayer
                 src={sample}
                 title="Lektion 3"
@@ -41,6 +41,31 @@ function mount(extra: Partial<Parameters<typeof VideoPlayer>[0]> = {}) {
 }
 
 describe('VideoPlayer in a real browser', () => {
+    // A phone at 390px leaves a ~358px player, a 320px phone ~288px. Every
+    // control must sit inside the player once playback has started.
+    it.each([358, 288])('keeps every control inside a %ipx player', async (width) => {
+        const video = mount({}, width);
+        await waitFor(() => video.readyState >= 1);
+        await userEvent.click(page.getByRole('button', { name: L.play }));
+        await waitFor(() => video.currentTime > 0.1);
+        video.pause();
+        const player = video.parentElement!.getBoundingClientRect();
+        const controls = [
+            ...document.querySelectorAll<HTMLElement>('[data-visible] button, [data-visible] input'),
+        ].filter((el) => el.getClientRects().length > 0);
+        expect(controls.length).toBeGreaterThan(3);
+        for (const el of controls) {
+            const box = el.getBoundingClientRect();
+            expect(box.right, el.getAttribute('aria-label') ?? el.tagName).toBeLessThanOrEqual(
+                player.right + 0.5,
+            );
+            expect(box.left).toBeGreaterThanOrEqual(player.left - 0.5);
+        }
+        // Skipping stays one control away until the player is very narrow.
+        const back = document.querySelector<HTMLElement>('[data-control="back10"]')!;
+        expect(back.getClientRects().length > 0).toBe(width >= 320);
+    });
+
     it('plays the video from the big button', async () => {
         const video = mount();
         await waitFor(() => video.readyState >= 1);
