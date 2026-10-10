@@ -464,6 +464,172 @@ describe('CategoryTree — moving', () => {
     });
 });
 
+const FLAT: TreeNode[] = [
+    { id: 'a', label: 'Artikel' },
+    { id: 'b', label: 'Berichte' },
+    { id: 'c', label: 'Chroniken' },
+];
+
+describe('CategoryTree — maxDepth', () => {
+    it('with maxDepth 1 offers no nesting entries in the menu', async () => {
+        const { user } = setup({ maxDepth: 1 }, FLAT);
+        await user.pointer({ keys: '[MouseRight]', target: item('Berichte') });
+        const menu = await screen.findByRole('menu');
+        for (const name of [
+            'Unterkategorie anlegen',
+            'Verschieben nach',
+            /Eine Ebene höher/,
+            /In die Kategorie darüber/,
+        ])
+            expect(within(menu).queryByRole('menuitem', { name })).not.toBeInTheDocument();
+        expect(within(menu).getByRole('menuitem', { name: /Umbenennen/ })).toBeInTheDocument();
+        expect(within(menu).getByRole('menuitem', { name: /Nach oben/ })).toBeInTheDocument();
+        expect(within(menu).getByRole('menuitem', { name: /Nach unten/ })).toBeInTheDocument();
+        expect(within(menu).getByRole('menuitem', { name: /Löschen/ })).toBeInTheDocument();
+    });
+
+    it('with maxDepth 1, Alt+→ and Alt+← do nothing and report nothing', async () => {
+        const { user, onNodesChange, state } = setup({ maxDepth: 1 }, FLAT);
+        await enter(user);
+        await user.keyboard('{ArrowDown}{Alt>}{ArrowRight}{ArrowLeft}{/Alt}');
+        expect(onNodesChange).not.toHaveBeenCalled();
+        expect(shape(state.nodes)).toBe('a,b,c');
+        expect(item('Berichte')).toHaveAttribute('aria-level', '1');
+    });
+
+    it('with maxDepth 1, Alt+↓ and Alt+↑ still reorder, reported as a move', async () => {
+        const { user, onNodesChange, state } = setup({ maxDepth: 1 }, FLAT);
+        await enter(user);
+        await user.keyboard('{Alt>}{ArrowDown}{/Alt}');
+        expect(shape(state.nodes)).toBe('b,a,c');
+        expect(onNodesChange).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ type: 'move', id: 'a', parentId: null }),
+        );
+        await user.keyboard('{Alt>}{ArrowUp}{/Alt}');
+        expect(shape(state.nodes)).toBe('a,b,c');
+    });
+
+    it('with maxDepth 1, the menu reorders too', async () => {
+        const { user, state } = setup({ maxDepth: 1 }, FLAT);
+        await user.pointer({ keys: '[MouseRight]', target: item('Chroniken') });
+        await user.click(await screen.findByRole('menuitem', { name: /Nach oben/ }));
+        expect(shape(state.nodes)).toBe('a,c,b');
+    });
+
+    it('with maxDepth 2, a node that has children cannot be indented under a sibling', async () => {
+        const tree: TreeNode[] = [
+            { id: 'a', label: 'Artikel', children: [{ id: 'a1', label: 'Alt' }] },
+            { id: 'b', label: 'Berichte', children: [{ id: 'b1', label: 'Bild' }] },
+            { id: 'c', label: 'Chroniken' },
+        ];
+        const { user, onNodesChange } = setup({ maxDepth: 2 }, tree);
+        await user.pointer({ keys: '[MouseRight]', target: item('Berichte') });
+        const menu = await screen.findByRole('menu');
+        expect(
+            within(menu).getByRole('menuitem', { name: /In die Kategorie darüber/ }),
+        ).toHaveAttribute('aria-disabled', 'true');
+        await user.keyboard('{Escape}');
+        item('Berichte').focus();
+        await user.keyboard('{Alt>}{ArrowRight}{/Alt}');
+        expect(onNodesChange).not.toHaveBeenCalled();
+    });
+
+    it('with maxDepth 2, a leaf may be indented once but not under a depth-2 node', async () => {
+        const tree: TreeNode[] = [
+            {
+                id: 'a',
+                label: 'Artikel',
+                children: [
+                    { id: 'a1', label: 'Alt' },
+                    { id: 'a2', label: 'Neu' },
+                ],
+            },
+            { id: 'c', label: 'Chroniken' },
+        ];
+        const { user, state, onNodesChange } = setup(
+            { maxDepth: 2, defaultExpandedIds: ['a'] },
+            tree,
+        );
+        item('Chroniken').focus();
+        await user.keyboard('{Alt>}{ArrowRight}{/Alt}');
+        expect(shape(state.nodes)).toBe('a(a1,a2,c)');
+        expect(onNodesChange).toHaveBeenCalledTimes(1);
+
+        // a2 under a1 would be level 3.
+        item('Neu').focus();
+        await user.keyboard('{Alt>}{ArrowRight}{/Alt}');
+        expect(onNodesChange).toHaveBeenCalledTimes(1);
+        expect(shape(state.nodes)).toBe('a(a1,a2,c)');
+    });
+
+    it('with maxDepth 2, offers "Unterkategorie anlegen" at level 1 but not at level 2', async () => {
+        const tree: TreeNode[] = [
+            { id: 'a', label: 'Artikel', children: [{ id: 'a1', label: 'Alt' }] },
+        ];
+        const { user } = setup({ maxDepth: 2, defaultExpandedIds: ['a'] }, tree);
+        await user.pointer({ keys: '[MouseRight]', target: item('Artikel') });
+        expect(
+            await screen.findByRole('menuitem', { name: 'Unterkategorie anlegen' }),
+        ).toBeInTheDocument();
+        await user.keyboard('{Escape}');
+        await user.pointer({ keys: '[MouseRight]', target: item('Alt') });
+        await screen.findByRole('menu');
+        expect(
+            screen.queryByRole('menuitem', { name: 'Unterkategorie anlegen' }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('with maxDepth 2, the move-to list disables destinations that would go too deep', async () => {
+        const tree: TreeNode[] = [
+            { id: 'a', label: 'Artikel', children: [{ id: 'a1', label: 'Alt' }] },
+            { id: 'b', label: 'Berichte', children: [{ id: 'b1', label: 'Bild' }] },
+            { id: 'c', label: 'Chroniken' },
+        ];
+        const { user } = setup({ maxDepth: 2 }, tree);
+        // A leaf at level 1 may go under a top-level folder, not under a level-2 one.
+        await user.pointer({ keys: '[MouseRight]', target: item('Chroniken') });
+        await user.click(await screen.findByRole('menuitem', { name: 'Verschieben nach' }));
+        const sub = (await screen.findAllByRole('menu')).at(-1)!;
+        expect(within(sub).getByRole('menuitem', { name: 'Artikel' })).not.toHaveAttribute(
+            'aria-disabled',
+        );
+    });
+
+    it('with maxDepth 2, hides the move-to entry when no destination is valid', async () => {
+        const tree: TreeNode[] = [
+            { id: 'a', label: 'Artikel' },
+            { id: 'b', label: 'Berichte', children: [{ id: 'b1', label: 'Bild' }] },
+        ];
+        const { user } = setup({ maxDepth: 2 }, tree);
+        // Berichte spans two levels: it cannot go under Artikel, and is already on top.
+        await user.pointer({ keys: '[MouseRight]', target: item('Berichte') });
+        await screen.findByRole('menu');
+        expect(
+            screen.queryByRole('menuitem', { name: 'Verschieben nach' }),
+        ).not.toBeInTheDocument();
+    });
+
+    it('by default has no depth limit: indent, add-child and move-to are all offered', async () => {
+        const { user, state } = setup();
+        await user.pointer({ keys: '[MouseRight]', target: item('Kunst') });
+        const menu = await screen.findByRole('menu');
+        expect(
+            within(menu).getByRole('menuitem', { name: 'Unterkategorie anlegen' }),
+        ).not.toHaveAttribute('aria-disabled');
+        expect(
+            within(menu).getByRole('menuitem', { name: 'Verschieben nach' }),
+        ).toBeInTheDocument();
+        await user.click(within(menu).getByRole('menuitem', { name: /In die Kategorie darüber/ }));
+        expect(shape(state.nodes)).toBe('arabisch(grund,aufbau),koran(tajwid,kunst)');
+    });
+
+    it('has no axe violations as a flat list', async () => {
+        const { container } = setup({ maxDepth: 1 }, FLAT);
+        expect(await axe(container)).toHaveNoViolations();
+    });
+});
+
 describe('CategoryTree — read-only', () => {
     it('offers no editing without onNodesChange', async () => {
         const user = userEvent.setup();
@@ -576,7 +742,10 @@ describe('CategoryTree — new ids', () => {
             await user.click(screen.getByRole('button', { name: 'Neue Kategorie' }));
             await user.keyboard('Kinder{Enter}');
             expect(onNodesChange).toHaveBeenCalledTimes(1);
-            expect(onNodesChange.mock.lastCall?.[1]).toMatchObject({ type: 'add', label: 'Kinder' });
+            expect(onNodesChange.mock.lastCall?.[1]).toMatchObject({
+                type: 'add',
+                label: 'Kinder',
+            });
         } finally {
             crypto.randomUUID = original;
         }

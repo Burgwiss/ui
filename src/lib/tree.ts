@@ -151,12 +151,36 @@ export function renameNode(nodes: TreeNode[], id: string, label: string): TreeNo
     });
 }
 
-/** False when `id` is missing, `parentId` is missing, or `parentId` is `id` itself or under it. */
-export function canMove(nodes: TreeNode[], id: string, parentId: string | null): boolean {
-    if (!findNode(nodes, id)) return false;
-    if (parentId === null) return true;
-    if (!findNode(nodes, parentId)) return false;
-    return !descendantIds(nodes, id).includes(parentId);
+/** How many levels `node` spans: 1 for a leaf, 2 for a node with leaves under it, and so on. */
+export function subtreeHeight(node: TreeNode): number {
+    return 1 + Math.max(0, ...(node.children ?? []).map(subtreeHeight));
+}
+
+/** The depth of `id`: 1 for the top level, 0 when absent. */
+export function depthOf(nodes: TreeNode[], id: string): number {
+    return pathTo(nodes, id).length;
+}
+
+/**
+ * False when `id` is missing, `parentId` is missing, or `parentId` is `id` itself or under it.
+ * With `maxDepth`, also false when the moved subtree would end up deeper than that
+ * (a top-level node has depth 1).
+ */
+export function canMove(
+    nodes: TreeNode[],
+    id: string,
+    parentId: string | null,
+    maxDepth?: number,
+): boolean {
+    const node = findNode(nodes, id);
+    if (!node) return false;
+    if (parentId !== null) {
+        if (!findNode(nodes, parentId)) return false;
+        if (descendantIds(nodes, id).includes(parentId)) return false;
+    }
+    if (maxDepth === undefined) return true;
+    const parentDepth = parentId === null ? 0 : depthOf(nodes, parentId);
+    return parentDepth + subtreeHeight(node) <= maxDepth;
 }
 
 /**
@@ -169,8 +193,9 @@ export function moveNode(
     id: string,
     parentId: string | null,
     index: number,
+    maxDepth?: number,
 ): TreeNode[] {
-    if (!canMove(nodes, id, parentId)) return nodes;
+    if (!canMove(nodes, id, parentId, maxDepth)) return nodes;
     const from = locate(nodes, id)!;
     const node = from.siblings[from.index]!;
     const at = from.parentId === parentId && from.index < index ? index - 1 : index;
@@ -187,12 +212,15 @@ export function moveSibling(nodes: TreeNode[], id: string, delta: -1 | 1): TreeN
     return moveNode(nodes, id, where.parentId, delta === 1 ? where.index + 2 : target);
 }
 
-/** Into the sibling just above, as its last child; nothing for the first sibling. */
-export function indentNode(nodes: TreeNode[], id: string): TreeNode[] {
+/**
+ * Into the sibling just above, as its last child; nothing for the first sibling,
+ * or when `maxDepth` would be exceeded.
+ */
+export function indentNode(nodes: TreeNode[], id: string, maxDepth?: number): TreeNode[] {
     const where = locate(nodes, id);
     if (!where || where.index === 0) return nodes;
     const above = where.siblings[where.index - 1]!;
-    return moveNode(nodes, id, above.id, above.children?.length ?? 0);
+    return moveNode(nodes, id, above.id, above.children?.length ?? 0, maxDepth);
 }
 
 /** Out of its parent, to just after it; nothing at the top level. */
@@ -216,8 +244,13 @@ export type TreeChange =
     | { type: 'move'; id: string; parentId: string | null; index: number }
     | { type: 'remove'; id: string };
 
-function allIds(nodes: TreeNode[]): string[] {
-    return nodes.flatMap((n) => [n.id, ...(n.children ? allIds(n.children) : [])]);
+function idList(nodes: TreeNode[]): string[] {
+    return nodes.flatMap((n) => [n.id, ...(n.children ? idList(n.children) : [])]);
+}
+
+/** Every id in the tree. */
+export function allIds(nodes: TreeNode[]): Set<string> {
+    return new Set(idList(nodes));
 }
 
 /**
@@ -232,8 +265,8 @@ function allIds(nodes: TreeNode[]): string[] {
  */
 export function diffTree(prev: TreeNode[], next: TreeNode[], moved?: string): TreeChange | null {
     if (prev === next) return null;
-    const before = new Set(allIds(prev));
-    const after = new Set(allIds(next));
+    const before = allIds(prev);
+    const after = allIds(next);
 
     const removed = [...before].filter((id) => !after.has(id));
     const top = removed.find((id) => {
@@ -268,4 +301,44 @@ export function diffTree(prev: TreeNode[], next: TreeNode[], moved?: string): Tr
             return { type: 'move', id, parentId: now.parentId, index };
     }
     return null;
+}
+
+/** What a list of items is filtered by: everything, items in no folder, or one folder and what is under it. */
+export type FolderScope = { kind: 'all' } | { kind: 'none' } | { kind: 'folder'; id: string };
+
+/**
+ * Items per node, counting everything under it: a folder with two subfolders of
+ * three items each holds six. `itemFolderIds` has one entry per item — its folder,
+ * or null for none. Ids that are not in the tree are ignored.
+ */
+export function subtreeCounts(
+    nodes: TreeNode[],
+    itemFolderIds: (string | null)[],
+): Record<string, number> {
+    const own = new Map<string, number>();
+    for (const folderId of itemFolderIds)
+        if (folderId !== null) own.set(folderId, (own.get(folderId) ?? 0) + 1);
+    const counts: Record<string, number> = {};
+    const walk = (node: TreeNode): number => {
+        const total =
+            (own.get(node.id) ?? 0) + (node.children ?? []).reduce((sum, c) => sum + walk(c), 0);
+        counts[node.id] = total;
+        return total;
+    };
+    nodes.forEach(walk);
+    return counts;
+}
+
+/**
+ * Whether an item in `folderId` belongs to `scope`. All: always. None: no folder,
+ * or a folder that is not in the tree. Folder: that folder or one under it.
+ */
+export function inFolderScope(
+    nodes: TreeNode[],
+    scope: FolderScope,
+    folderId: string | null,
+): boolean {
+    if (scope.kind === 'all') return true;
+    if (scope.kind === 'none') return folderId === null || findNode(nodes, folderId) === null;
+    return folderId !== null && descendantIds(nodes, scope.id).includes(folderId);
 }

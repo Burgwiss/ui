@@ -151,6 +151,14 @@ export interface CategoryTreeProps {
     shortcutLabels?: ShortcutLabels;
     /** All visible text, in the app's language. */
     labels: CategoryTreeLabels;
+    /**
+     * The deepest level a category may sit on; a top-level category is level 1. Default: no
+     * limit. `1` makes the tree a flat, reorderable list: no subcategory, indent, outdent or
+     * "Verschieben nach" entries, Alt+→/← do nothing, and dropping can only reorder. For any
+     * `n`, no add, indent, move or drop may make a category (counting its own subcategories)
+     * deeper than `n`.
+     */
+    maxDepth?: number;
     className?: string;
 }
 
@@ -266,6 +274,7 @@ export function CategoryTree({
     storageKey,
     shortcutLabels,
     labels,
+    maxDepth,
     className,
 }: CategoryTreeProps) {
     const editable = onNodesChange !== undefined;
@@ -449,7 +458,7 @@ export function CategoryTree({
             const moves: Record<string, () => TreeNode[]> = {
                 ArrowUp: () => moveSibling(nodes, id, -1),
                 ArrowDown: () => moveSibling(nodes, id, 1),
-                [forward]: () => indentNode(nodes, id),
+                [forward]: () => indentNode(nodes, id, maxDepth),
                 [back]: () => outdentNode(nodes, id),
             };
             if (editable && moves[event.key]) {
@@ -528,8 +537,8 @@ export function CategoryTree({
         const { nodes: tree, lines: visible } = latest.current;
         const el = document.elementFromPoint(x, y);
         const valid = (t: DropTarget) =>
-            canMove(tree, dragId, t.parentId) &&
-            moveNode(tree, dragId, t.parentId, t.index) !== tree
+            canMove(tree, dragId, t.parentId, maxDepth) &&
+            moveNode(tree, dragId, t.parentId, t.index, maxDepth) !== tree
                 ? t
                 : null;
         if (el?.closest('[data-tree-end]') && treeRef.current?.parentElement?.contains(el))
@@ -540,8 +549,11 @@ export function CategoryTree({
         if (!line || line.draft || line.node.id === dragId) return null;
         const rect = row.getBoundingClientRect();
         const at = (y - rect.top) / rect.height;
-        const zone: Zone = at < 0.25 ? 'before' : at > 0.75 ? 'after' : 'inside';
+        let zone: Zone = at < 0.25 ? 'before' : at > 0.75 ? 'after' : 'inside';
         const id = line.node.id;
+        // Where "into" is not allowed (a flat list, or too deep), the middle reorders instead.
+        if (zone === 'inside' && !canMove(latest.current.nodes, dragId, id, maxDepth))
+            zone = at < 0.5 ? 'before' : 'after';
         if (zone === 'before')
             return valid({ lineId: id, zone, parentId: line.parentId, index: line.posInSet - 1 });
         if (zone === 'after')
@@ -601,7 +613,7 @@ export function CategoryTree({
             suppressClick.current = true;
             window.setTimeout(() => (suppressClick.current = false), 0);
             const tree = latest.current.nodes;
-            if (target) applyMove(id, moveNode(tree, id, target.parentId, target.index));
+            if (target) applyMove(id, moveNode(tree, id, target.parentId, target.index, maxDepth));
         };
         const cancel = () => cleanup();
         const escape = (e: globalThis.KeyboardEvent) => {
@@ -634,6 +646,18 @@ export function CategoryTree({
         const where = locate(nodes, id)!;
         const first = where.index === 0;
         const last = where.index === where.siblings.length - 1;
+        const flat = maxDepth !== undefined && maxDepth <= 1;
+        const canNest = maxDepth === undefined || line.level < maxDepth;
+        const destinations =
+            maxDepth === undefined
+                ? null
+                : allLines.filter(
+                      (dest) =>
+                          dest.node.id !== where.parentId &&
+                          canMove(nodes, id, dest.node.id, maxDepth),
+                  );
+        const showMoveTo =
+            destinations === null || where.parentId !== null || destinations.length > 0;
         const run = (next: () => TreeNode[]) => {
             afterMenu.current = () => lineEls.current.get(id)?.focus();
             applyMove(id, next());
@@ -662,10 +686,12 @@ export function CategoryTree({
                 {editable && onEdit && <DropdownMenuSeparator />}
                 {editable && (
                     <>
-                        <DropdownMenuItem onSelect={() => later(() => startNew(id))}>
-                            <FolderPlus aria-hidden="true" />
-                            {labels.addChild}
-                        </DropdownMenuItem>
+                        {canNest && (
+                            <DropdownMenuItem onSelect={() => later(() => startNew(id))}>
+                                <FolderPlus aria-hidden="true" />
+                                {labels.addChild}
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                             onSelect={() => later(() => setEditing({ kind: 'rename', id }))}
                         >
@@ -674,44 +700,49 @@ export function CategoryTree({
                             <DropdownMenuShortcut>{shortcut('F2')}</DropdownMenuShortcut>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <FolderInput aria-hidden="true" />
-                                {labels.moveTo}
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
-                                <DropdownMenuItem
-                                    disabled={where.parentId === null}
-                                    onSelect={() =>
-                                        run(() => moveNode(nodes, id, null, nodes.length))
-                                    }
-                                >
-                                    {labels.topLevel}
-                                </DropdownMenuItem>
-                                {allLines.map((dest) => (
+                        {showMoveTo && (
+                            <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                    <FolderInput aria-hidden="true" />
+                                    {labels.moveTo}
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
                                     <DropdownMenuItem
-                                        key={dest.node.id}
-                                        disabled={
-                                            dest.node.id === where.parentId ||
-                                            !canMove(nodes, id, dest.node.id)
-                                        }
-                                        style={{ paddingInlineStart: `${8 + dest.level * 12}px` }}
+                                        disabled={where.parentId === null}
                                         onSelect={() =>
-                                            run(() =>
-                                                moveNode(
-                                                    nodes,
-                                                    id,
-                                                    dest.node.id,
-                                                    dest.node.children?.length ?? 0,
-                                                ),
-                                            )
+                                            run(() => moveNode(nodes, id, null, nodes.length))
                                         }
                                     >
-                                        {dest.node.label}
+                                        {labels.topLevel}
                                     </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                                    {allLines.map((dest) => (
+                                        <DropdownMenuItem
+                                            key={dest.node.id}
+                                            disabled={
+                                                dest.node.id === where.parentId ||
+                                                !canMove(nodes, id, dest.node.id, maxDepth)
+                                            }
+                                            style={{
+                                                paddingInlineStart: `${8 + dest.level * 12}px`,
+                                            }}
+                                            onSelect={() =>
+                                                run(() =>
+                                                    moveNode(
+                                                        nodes,
+                                                        id,
+                                                        dest.node.id,
+                                                        dest.node.children?.length ?? 0,
+                                                        maxDepth,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            {dest.node.label}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                        )}
                         <DropdownMenuItem
                             disabled={first}
                             onSelect={() => run(() => moveSibling(nodes, id, -1))}
@@ -728,22 +759,32 @@ export function CategoryTree({
                             {labels.moveDown}
                             <DropdownMenuShortcut>{shortcut('Alt+↓')}</DropdownMenuShortcut>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            disabled={where.parentId === null}
-                            onSelect={() => run(() => outdentNode(nodes, id))}
-                        >
-                            <IndentDecrease aria-hidden="true" className="rtl:-scale-x-100" />
-                            {labels.outdent}
-                            <DropdownMenuShortcut>{shortcut('Alt+←')}</DropdownMenuShortcut>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            disabled={first}
-                            onSelect={() => run(() => indentNode(nodes, id))}
-                        >
-                            <IndentIncrease aria-hidden="true" className="rtl:-scale-x-100" />
-                            {labels.indent}
-                            <DropdownMenuShortcut>{shortcut('Alt+→')}</DropdownMenuShortcut>
-                        </DropdownMenuItem>
+                        {!flat && (
+                            <>
+                                <DropdownMenuItem
+                                    disabled={where.parentId === null}
+                                    onSelect={() => run(() => outdentNode(nodes, id))}
+                                >
+                                    <IndentDecrease
+                                        aria-hidden="true"
+                                        className="rtl:-scale-x-100"
+                                    />
+                                    {labels.outdent}
+                                    <DropdownMenuShortcut>{shortcut('Alt+←')}</DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={first || indentNode(nodes, id, maxDepth) === nodes}
+                                    onSelect={() => run(() => indentNode(nodes, id, maxDepth))}
+                                >
+                                    <IndentIncrease
+                                        aria-hidden="true"
+                                        className="rtl:-scale-x-100"
+                                    />
+                                    {labels.indent}
+                                    <DropdownMenuShortcut>{shortcut('Alt+→')}</DropdownMenuShortcut>
+                                </DropdownMenuItem>
+                            </>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => later(() => requestDelete(id))}>
                             <Trash2 aria-hidden="true" />
