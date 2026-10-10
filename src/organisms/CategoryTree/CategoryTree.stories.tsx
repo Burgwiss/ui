@@ -122,3 +122,24 @@ function ReadOnly() {
 export const Leer: Story = {
     render: () => <Demo initial={[]} />,
 };
+
+const FLAT_FOLDERS: TreeNode[] = [
+    { id: 'meinung', label: 'Meinung' },
+    { id: 'bericht', label: 'Berichte' },
+    { id: 'interview', label: 'Interviews' },
+    { id: 'ratgeber', label: 'Ratgeber' },
+];
+
+/**
+ * `maxDepth={1}`: a flat, reorderable list of folders. No subfolders, no indent
+ * or "Verschieben nach"; dragging and Alt + ↑ ↓ only change the order.
+ */
+export const FlacheListe: Story = {
+    render: () => (
+        <Demo
+            initial={FLAT_FOLDERS}
+            maxDepth={1}
+            counts={{ meinung: 8, bericht: 12, interview: 3, ratgeber: 5 }}
+        />
+    ),
+};

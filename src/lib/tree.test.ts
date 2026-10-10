@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    allIds,
     canMove,
+    depthOf,
     descendantIds,
     diffTree,
     findNode,
     flattenVisible,
+    inFolderScope,
     indentNode,
     insertNode,
     locate,
@@ -15,6 +18,8 @@ import {
     pathTo,
     removeNode,
     renameNode,
+    subtreeCounts,
+    subtreeHeight,
     type TreeNode,
 } from './tree';
 
@@ -337,5 +342,109 @@ describe('diffTree — a swap of neighbours', () => {
     it('ignores a hint that does not explain the change', () => {
         const next = moveNode(TREE, 'kunst', 'arabisch', 0);
         expect(diffTree(TREE, next, 'koran')).toMatchObject({ type: 'move', id: 'kunst' });
+    });
+});
+
+describe('depth limits', () => {
+    it('measures depth and subtree height', () => {
+        expect(depthOf(TREE, 'kunst')).toBe(1);
+        expect(depthOf(TREE, 'regeln')).toBe(3);
+        expect(depthOf(TREE, 'nope')).toBe(0);
+        expect(subtreeHeight(findNode(TREE, 'kunst')!)).toBe(1);
+        expect(subtreeHeight(findNode(TREE, 'koran')!)).toBe(3);
+    });
+
+    it('canMove refuses a move that would exceed maxDepth, counting the moved subtree', () => {
+        // koran spans 3 levels: under arabisch it would reach level 4.
+        expect(canMove(TREE, 'koran', 'arabisch', 3)).toBe(false);
+        expect(canMove(TREE, 'koran', 'arabisch', 4)).toBe(true);
+        expect(canMove(TREE, 'kunst', 'tajwid', 2)).toBe(false);
+        expect(canMove(TREE, 'kunst', 'tajwid', 3)).toBe(true);
+        expect(canMove(TREE, 'kunst', 'koran', 3)).toBe(true);
+        expect(canMove(TREE, 'regeln', null, 1)).toBe(true);
+        expect(canMove(TREE, 'kunst', 'arabisch', 1)).toBe(false);
+        expect(canMove(TREE, 'kunst', 'arabisch')).toBe(true);
+    });
+
+    it('moveNode and indentNode return the same tree when maxDepth forbids it', () => {
+        expect(moveNode(TREE, 'kunst', 'arabisch', 0, 1)).toBe(TREE);
+        expect(indentNode(TREE, 'kunst', 1)).toBe(TREE);
+        expect(shape(indentNode(TREE, 'kunst', 2))).toBe(
+            'arabisch(grund,aufbau),koran(tajwid(regeln),kunst)',
+        );
+        expect(indentNode(TREE, 'koran', 3)).toBe(TREE);
+    });
+});
+
+describe('folder helpers', () => {
+    it('lists every id in the tree', () => {
+        expect(allIds(TREE)).toEqual(
+            new Set(['arabisch', 'grund', 'aufbau', 'koran', 'tajwid', 'regeln', 'kunst']),
+        );
+        expect(allIds([])).toEqual(new Set());
+    });
+
+    it('counts items under a node, including everything below it', () => {
+        const counts = subtreeCounts(TREE, [
+            'grund',
+            'grund',
+            'aufbau',
+            'regeln',
+            'tajwid',
+            'kunst',
+            'arabisch',
+            null,
+            'gibt-es-nicht',
+        ]);
+        expect(counts).toEqual({
+            arabisch: 4,
+            grund: 2,
+            aufbau: 1,
+            koran: 2,
+            tajwid: 2,
+            regeln: 1,
+            kunst: 1,
+        });
+    });
+
+    it('counts zero for nodes without items and for an empty list', () => {
+        expect(subtreeCounts(TREE, []).arabisch).toBe(0);
+        expect(subtreeCounts([], ['x', null])).toEqual({});
+    });
+
+    it('a folder with two subfolders of three items each holds six', () => {
+        const nodes: TreeNode[] = [
+            {
+                id: 'p',
+                label: 'P',
+                children: [
+                    { id: 'x', label: 'X' },
+                    { id: 'y', label: 'Y' },
+                ],
+            },
+        ];
+        expect(subtreeCounts(nodes, ['x', 'x', 'x', 'y', 'y', 'y']).p).toBe(6);
+    });
+
+    it('scopes: all takes everything', () => {
+        for (const id of [null, 'kunst', 'ghost'])
+            expect(inFolderScope(TREE, { kind: 'all' }, id)).toBe(true);
+    });
+
+    it('scopes: none takes items without a folder or in a folder that is gone', () => {
+        const none = { kind: 'none' } as const;
+        expect(inFolderScope(TREE, none, null)).toBe(true);
+        expect(inFolderScope(TREE, none, 'ghost')).toBe(true);
+        expect(inFolderScope(TREE, none, 'kunst')).toBe(false);
+    });
+
+    it('scopes: a folder takes itself and its descendants only', () => {
+        const koran = { kind: 'folder', id: 'koran' } as const;
+        expect(inFolderScope(TREE, koran, 'koran')).toBe(true);
+        expect(inFolderScope(TREE, koran, 'regeln')).toBe(true);
+        expect(inFolderScope(TREE, koran, 'kunst')).toBe(false);
+        expect(inFolderScope(TREE, koran, null)).toBe(false);
+        expect(inFolderScope(TREE, { kind: 'folder', id: 'ghost' }, 'ghost')).toBe(false);
+        expect(inFolderScope(TREE, { kind: 'folder', id: 'regeln' }, 'koran')).toBe(false);
     });
 });
