@@ -74,6 +74,7 @@ export * from './organisms/CategoryTree';
 export * from './organisms/ChatComposer';
 export * from './organisms/Conversation';
 export * from './organisms/DataGrid';
+export * from './organisms/FolderSidebar';
 export * from './organisms/GridActions';
 export * from './organisms/LiveCanvas';
 export * from './organisms/MessageList';
