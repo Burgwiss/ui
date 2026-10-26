@@ -1,0 +1,15 @@
+/*
+  Entry stylesheet for apps consuming @burgwiss/ui.
+
+  In the consuming app's CSS:
+
+      @import 'tailwindcss';
+      @import '@burgwiss/ui/styles.css';
+      @source '../node_modules/@burgwiss/ui/dist';
+
+  The @source line matters: Tailwind v4 does not scan node_modules, so without
+  it every class the components use is missing and they render unstyled.
+*/
+@import 'tw-animate-css';
+@import '@fontsource-variable/geist';
+@import './tokens/theme.css';

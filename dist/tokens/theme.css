@@ -1,0 +1,421 @@
+/*
+  @burgwiss/ui — design tokens.
+
+  The CSS variables below are the PUBLIC API of this package: components only
+  ever reference them through Tailwind utilities (bg-primary, text-foreground,
+  …), never raw colours. An app themes the whole library by overriding the
+  variables (Burgwiss injects per-school values on :root). Renaming or removing
+  a variable is a breaking change (major version).
+
+  Extracted from burgwiss resources/css/app.css (2026-09-30); keep the two in
+  step until Burgwiss imports this file instead of carrying its own copy.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Burgwiss theme system.
+
+  - Default values below are the seed school's theme; per-school overrides
+    are injected by the server as inline CSS variables on `:root` (see
+    resources/views/app.blade.php → ThemeProvider).
+  - Components must reference these tokens via Tailwind utilities
+    (`bg-primary`, `text-foreground`, etc.) — never hardcoded colors.
+*/
+
+@theme {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    /* Readable accent TEXT on the page background (AA): the brass eyebrow/meta
+       labels. The accent fill (`bg-accent`) is too pale to read as text; this
+       is the accent darkened to clear contrast (derived per-school, ADR-0084). */
+    --color-accent-strong: var(--accent-strong);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    /* On-tint foregrounds: readable text ON a `bg-{tone}/10` tint (WCAG AA
+       ≥4.5:1, axe-tested). Distinct from `*-foreground` above, which is the
+       text color for a SOLID `bg-{tone}` fill (near-white) and fails on a
+       tint. Used by StatusBadge's tonal variants. */
+    --color-success-tint-foreground: var(--success-tint-foreground);
+    --color-warning-tint-foreground: var(--warning-tint-foreground);
+    --color-destructive-tint-foreground: var(--destructive-tint-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-overlay: var(--overlay);
+    --color-video-surface: var(--video-surface);
+    --color-video-foreground: var(--video-foreground);
+    --color-video-scrim: var(--video-scrim);
+    /* Hero scrim pair — see the token definitions below for the WCAG argument. */
+    --color-hero-scrim: var(--hero-scrim);
+    --color-hero-scrim-strong: var(--hero-scrim-strong);
+    --color-hero-scrim-foreground: var(--hero-scrim-foreground);
+    --color-hero-veil: var(--hero-veil);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-rail: var(--rail);
+    --color-rail-foreground: var(--rail-foreground);
+    --color-rail-muted-foreground: var(--rail-muted-foreground);
+    --color-rail-accent: var(--rail-accent);
+    /* Categorical chart series palette (Analytics dashboard). Bridged so
+       `fill-chart-1` / `stroke-chart-1` utilities resolve; the shadcn
+       ChartContainer also reads these vars directly. */
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    /* Serif + mono families for brands that want them (ADR-0084). Default to
+       system stacks — no webfont is pulled into the bundle here; a school that
+       opts into a serif/mono pairing self-hosts the face + overrides these
+       tokens (phase 1c), so `font-serif` / `font-mono` utilities resolve today
+       without any added payload. */
+    --font-serif: ui-serif, Georgia, 'Times New Roman', serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* Heading font — what `font-heading` resolves to (CardTitle, PageHeader).
+       Defaults to the display font (Geist), so a theme that sets `--font-display`
+       to a serif (the Institutional preset) turns every heading serif without
+       touching a component. */
+    --font-heading: var(--font-display);
+}
+
+/*
+  Theme scope. `@theme` above resolves every `--color-*` and `--radius-*`
+  bridge ONCE, at :root — so setting `--primary` on some element below it
+  changes nothing inside. An element with `theme-scope` re-declares the bridge,
+  so variables set on it (or on anything between it and :root) repaint what
+  is inside. LiveCanvas puts it on its artboard; a scoped preview of another
+  school's theme would too.
+
+  Keep in step with the @theme block: tests/theme-scope.test.ts fails when an
+  entry there is missing here.
+*/
+.theme-scope {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent-strong: var(--accent-strong);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-tint-foreground: var(--success-tint-foreground);
+    --color-warning-tint-foreground: var(--warning-tint-foreground);
+    --color-destructive-tint-foreground: var(--destructive-tint-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-overlay: var(--overlay);
+    --color-video-surface: var(--video-surface);
+    --color-video-foreground: var(--video-foreground);
+    --color-video-scrim: var(--video-scrim);
+    --color-hero-scrim: var(--hero-scrim);
+    --color-hero-scrim-strong: var(--hero-scrim-strong);
+    --color-hero-scrim-foreground: var(--hero-scrim-foreground);
+    --color-hero-veil: var(--hero-veil);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-rail: var(--rail);
+    --color-rail-foreground: var(--rail-foreground);
+    --color-rail-muted-foreground: var(--rail-muted-foreground);
+    --color-rail-accent: var(--rail-accent);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --font-heading: var(--font-display);
+}
+
+/*
+  The default (seed-school) palette lives in `@layer base` on purpose.
+  Per-school overrides are injected by the server as an *unlayered* inline
+  `<style>:root{…}</style>` in app.blade.php, emitted BEFORE the Vite bundle.
+  Unlayered declarations always beat any cascade layer, so these defaults
+  only apply when the server injects nothing — otherwise the school's
+  colours win, in both Vite dev (runtime-injected CSS) and a built artifact,
+  regardless of source order. Without the layer, two equal-specificity
+  unlayered `:root` rules tie on specificity and the later-loaded bundle
+  wins, silently clobbering the school theme (issue #554).
+
+  The `.dark` block below is deliberately left UNLAYERED: the server only
+  injects light tokens, so a layered `.dark` would lose to that inline
+  `:root` and dark mode would render light values. Unlayered, `.dark`
+  still wins by source order when it is active.
+*/
+@layer base {
+    :root {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.43 0 0); /* WCAG AA contrast against bg-muted (axe-tested) */
+        --accent: oklch(0.97 0 0);
+        --accent-foreground: oklch(0.205 0 0);
+        /* Seed/compat default: a neutral accent has no brand hue, so the
+           readable "strong" accent is a dark neutral that clears AA on the
+           light background. Preset (derive) schools override this inline. */
+        --accent-strong: oklch(0.45 0 0);
+        /* White on this red is 4.57 and near-ink is 3.76, so white is both the
+           better and the only passing choice — the original pairing was right.
+           An earlier pass flipped it to ink and nudged the fill, because the
+           contrast checker of the day scored chroma-blind and reported the
+           opposite (3.20 white / 4.87 ink). Both numbers were wrong; see
+           ContrastCheckerAccuracyTest for the reference values. */
+        --destructive: oklch(0.577 0.245 27.325);
+        --destructive-foreground: oklch(0.985 0 0);
+        --warning: oklch(0.75 0.18 80);
+        --warning-foreground: oklch(0.2 0.04 80);
+        /* White on this green is 2.73 and fails; near-ink reaches 6.29 with the
+           fill untouched, so only the foreground moves. */
+        --success: oklch(0.665 0.191 142.495);
+        --success-foreground: oklch(0.205 0 0);
+        /* On-tint foregrounds — darkened, still-hued text that clears 4.5:1 on
+           the `bg-{tone}/10` tint over a light surface (axe-verified). */
+        --success-tint-foreground: oklch(0.48 0.14 142.495);
+        --warning-tint-foreground: oklch(0.35 0.06 80);
+        --destructive-tint-foreground: oklch(0.48 0.22 27.325);
+        --border: oklch(0.922 0 0);
+        --input: oklch(0.922 0 0);
+        /* WCAG 2.2 SC 1.4.11 — a focus indicator is a non-text element and
+           needs 3:1 against what it sits on. Measured against every light
+           surface in this palette:
+
+             0.708 (was)  2.59 white / 2.38 muted / 2.04 input   FAIL
+             0.62         3.64        / 3.34      / 2.87         fails on input
+             0.58 (now)   4.28        / 3.93      / 3.38         passes everywhere
+
+           axe has no 1.4.11 check, so tests/ring-contrast.test.ts measures
+           the ring against every surface in both modes (muted too: menus draw
+           it inside a highlighted item, #1558). Dark mode (0.556) already
+           passes at 4.18 on background / 3.79 on card and is deliberately
+           unchanged. */
+        --ring: oklch(0.58 0 0);
+        --overlay: oklch(0 0 0 / 50%);
+        /* Video letterbox surface — black bars read as black in every school theme
+           and both light/dark, so this is a constant near-black (no .dark override). */
+        --video-surface: oklch(0.145 0 0);
+        /* Text and controls drawn ON a video: constant near-white, and the dark
+           gradient behind the control bar that keeps it readable on any frame.
+           White on the scrim is at least 10.4:1 even over a pure-white frame
+           (75 % black over white = sRGB 0.25); controls sit on it. */
+        --video-foreground: oklch(0.985 0 0);
+        --video-scrim: oklch(0 0 0 / 75%);
+
+        /* Hero scrim — the measurable guarantee behind the marketing hero (#1392).
+           Like --video-surface these are CONSTANTS, not brand colours, and have no
+           .dark override: they sit over an admin-uploaded PHOTO, not over a themed
+           surface, so the school's palette says nothing about what is underneath.
+
+           The family is photo-general, not hero-specific, and the carousel block's
+           slide caption reuses it verbatim (#1424) rather than deriving a second
+           number for the identical situation — one number that cannot drift from
+           its reason beats two that can. The NAME is kept: renaming it would move
+           ~123 references across 8 files for no behavioural change, and a rename
+           is the kind of diff that hides a real one. If a THIRD surface joins,
+           rename the family then. Read it as a description of the SITUATION, not
+           of the block: anything wearing these tokens is light text over an image
+           the product does not constrain — nothing else.
+
+           --hero-scrim is a flat semi-transparent BLACK behind the hero's text
+           column, and --hero-scrim-foreground is the text on it. Because the scrim
+           is a background-COLOR (not a gradient and not an image), axe composites
+           it and computes a real ratio — the whole point of #1392, where a
+           `bg-gradient-to-r from-black/85 … to-black/30` was unevaluable, so axe
+           walked up to the opaque `bg-muted` ancestor and reported white-on-#f5f5f5
+           at 1.09:1 forever.
+
+           The 72% is not a taste value. White text over a black scrim of alpha a,
+           laid over the BRIGHTEST possible photo (pure white), lands on a grey of
+           (1-a)·255; requiring 4.5:1 solves to a ≥ 0.5347 at rest. The binding
+           constraint is not rest, though: the outline CTA's hover lays 10% WHITE
+           back over the scrim, moving the background TOWARD the text, and that
+           pushes the minimum to a ≥ 0.5941. (Measured, not assumed — a 54% scrim
+           passes the resting rule and fails the hover one.) 72% clears both with
+           room — 9.2:1 at rest in that worst case — and still shows the photograph
+           through. tests/js/theme/hero-scrim-contrast.test.ts re-derives BOTH
+           bounds from the WCAG formula and fails if this value drops below either,
+           so the number and the reason cannot drift apart. */
+        --hero-scrim: oklch(0 0 0 / 72%);
+        /* The HOVER partner for anything wearing --hero-scrim. It exists because
+           the obvious way to write a hover on a light-on-dark control is the wrong
+           one, and the first pass of THIS change made that mistake: the carousel
+           arrows were given `hover:bg-hero-scrim-foreground/20`, which REPLACES the
+           72% black with 20% white rather than layering on it. Measured in
+           Chromium over a pure-white hero photo, that drops the white glyph from
+           12.82:1 at rest to 1.80:1 on hover — the arrow disappears at the moment
+           the pointer reaches it, in a state no axe run visits and no static
+           screenshot review is likely to catch. A hover over an unknown photograph
+           may only move AWAY from the foreground, never toward it, so the hover
+           token is MORE opaque black, not less. The pin asserts that ORDERING
+           rather than this specific number. */
+        --hero-scrim-strong: oklch(0 0 0 / 88%);
+        --hero-scrim-foreground: oklch(1 0 0);
+        /* A flat full-bleed darkening over the hero photo. Aesthetic, not
+           load-bearing for contrast — but a COLOUR rather than a gradient, so it
+           can only help axe's computation, never blind it. */
+        --hero-veil: oklch(0 0 0 / 30%);
+        --radius: 0.625rem;
+
+        /* Sidebar surface tokens — mapped onto the per-school palette so the
+           admin shell themes with the rest of the app. `var()` is late-bound,
+           so the `.dark` overrides of --card/--muted/etc. flow through here
+           without a separate dark block. */
+        --sidebar: var(--card);
+        --sidebar-foreground: var(--card-foreground);
+        --sidebar-primary: var(--primary);
+        --sidebar-primary-foreground: var(--primary-foreground);
+        --sidebar-accent: var(--muted);
+        --sidebar-accent-foreground: var(--foreground);
+        --sidebar-border: var(--border);
+        --sidebar-ring: var(--ring);
+
+        /* App rail — the dark strip of app switches at the far left. Dark in
+           both modes on purpose: it is the one surface that frames the app
+           rather than belonging to the page. Measured: foreground 17:1 on the
+           rail and 12:1 on the accent; muted foreground 7.2:1 and 5.1:1. */
+        --rail: oklch(0.21 0.034 264.7);
+        --rail-foreground: oklch(0.985 0 0);
+        --rail-muted-foreground: oklch(0.72 0.02 260);
+        --rail-accent: oklch(1 0 0 / 12%);
+
+        /* Categorical chart palette (Analytics). Distinct, contrast-checked
+           hues for chart series. A school may override these per theme; they
+           are deliberately not the semantic tones so a series colour never
+           reads as "good/bad". */
+        --chart-1: oklch(0.646 0.222 41.116);
+        --chart-2: oklch(0.6 0.118 184.704);
+        --chart-3: oklch(0.398 0.07 227.392);
+        --chart-4: oklch(0.828 0.189 84.429);
+        --chart-5: oklch(0.769 0.188 70.08);
+    }
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    /* Seed/compat default (dark): readable neutral accent text on the dark surface. */
+    --accent-strong: oklch(0.75 0 0);
+    /* Dark-mode red is lighter, which flips the answer: white is 2.77 here and
+       fails, while near-ink reaches 6.21 with the fill untouched. Light and
+       dark genuinely want different foregrounds on the same tone. */
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.205 0 0);
+    --warning: oklch(0.8 0.18 80);
+    --warning-foreground: oklch(0.15 0.02 80);
+    /* White on this green is 2.38; near-ink reaches 7.22 with the fill untouched. */
+    --success: oklch(0.7 0.191 142.495);
+    --success-foreground: oklch(0.205 0 0);
+    /* On-tint foregrounds — lightened, still-hued text that clears 4.5:1 on
+       the `bg-{tone}/10` tint over the dark card surface (axe-verified). */
+    --success-tint-foreground: oklch(0.85 0.16 142.495);
+    --warning-tint-foreground: oklch(0.9 0.1 80);
+    --destructive-tint-foreground: oklch(0.8 0.18 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --overlay: oklch(0 0 0 / 50%);
+
+    /* Chart palette — brighter variants for the dark surface. */
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+}
+
+@layer base {
+    * {
+        border-color: var(--border);
+    }
+
+    body {
+        background-color: var(--background);
+        color: var(--foreground);
+        font-family: var(--font-sans);
+    }
+
+    /* Headings take the theme's heading font (= --font-display unless a theme
+       says otherwise), so a serif display font turns every heading serif
+       without touching a component. A `font-*` utility on a heading still
+       wins — utilities beat base. Same rule as Burgwiss's app.css. */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+    }
+}
