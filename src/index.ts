@@ -3,6 +3,7 @@ export { cn } from './lib/cn';
 export { DirectionProvider, inlineArrows, isRtl, useDirection, type Dir } from './lib/direction';
 export { downloadText } from './lib/download';
 export * from './lib/tree';
+export * from './lib/tileGrid';
 export {
     formatFileSize,
     MESSAGE_ATTACHMENT_MAX_MB,
@@ -16,6 +17,7 @@ export * from './hooks';
 // Atoms — one control you use as a whole. An atom may lean on another atom
 // (Button shows a Tooltip), never on a higher level.
 export * from './atoms/Avatar';
+export * from './atoms/AudioLevelMeter';
 export * from './atoms/Badge';
 export * from './atoms/Button';
 export * from './atoms/Checkbox';
@@ -36,6 +38,7 @@ export * from './atoms/Tooltip';
 
 // Molecules — a small widget: a few atoms that work together.
 export * from './molecules/Alert';
+export * from './molecules/AdmissionRequests';
 export * from './molecules/AlertDialog';
 export * from './molecules/AttachmentDropzone';
 export * from './molecules/AttachmentList';
@@ -60,12 +63,16 @@ export * from './molecules/GridOptions';
 export * from './molecules/ImageAdjustDialog';
 export * from './molecules/InlineText';
 export * from './molecules/LanguageSelect';
+export * from './molecules/MeetingControl';
 export * from './molecules/Popover';
+export * from './molecules/ReactionPicker';
+export * from './molecules/RecordingIndicator';
 export * from './molecules/SearchField';
 export * from './molecules/SegmentedChoice';
 export * from './molecules/SegmentedTabs';
 export * from './molecules/Select';
 export * from './molecules/StatCard';
+export * from './molecules/SupportReference';
 export * from './molecules/Tabs';
 
 // Organisms — a region of the screen: a nav bar, a table, a toolbar.
@@ -74,20 +81,29 @@ export * from './organisms/CategoryTree';
 export * from './organisms/ChatComposer';
 export * from './organisms/Conversation';
 export * from './organisms/DataGrid';
+export * from './organisms/DevicePreview';
 export * from './organisms/FolderSidebar';
 export * from './organisms/GridActions';
 export * from './organisms/LiveCanvas';
+export * from './organisms/MeetingHeader';
+export * from './organisms/MeetingToolbar';
 export * from './organisms/MessageList';
 export * from './organisms/PageViewer';
+export * from './organisms/ParticipantList';
+export * from './organisms/ParticipantTile';
+export * from './organisms/Poll';
 export * from './organisms/Sheet';
 export * from './organisms/Sidebar';
 export * from './organisms/Table';
 export * from './organisms/ThreadList';
 export * from './organisms/VideoPlayer';
+export * from './organisms/VideoStage';
 
 // Templates — page layouts with slots; no data of their own.
 export * from './templates/AdminLayout';
 export * from './templates/ChatPage';
 export * from './templates/GridPage';
+export * from './templates/MeetingLobby';
+export * from './templates/MeetingRoom';
 export * from './templates/PageEditor';
 export * from './templates/SidebarLayout';

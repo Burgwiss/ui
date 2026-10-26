@@ -337,7 +337,7 @@ export function MessageList({
                                         </div>
                                     )}
 
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex max-w-full min-w-0 items-center gap-1">
                                         {/* Actions sit on the inner side of the bubble. */}
                                         {own && !message.deleted && actions(message)}
 
