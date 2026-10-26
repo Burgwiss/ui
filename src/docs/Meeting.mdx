@@ -1,0 +1,95 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Richtlinien/Meeting" />
+
+# Meeting — der Bauplan
+
+Wie ein Meetingraum aus diesem Paket zusammengesetzt wird. Der klickbare Entwurf
+steht unter **Pages → Meeting**; diese Seite sagt, welcher Baustein wohin gehört
+und was die App selbst tut.
+
+Die Bausteine kennen **keine Medien**. Sie rendern nie selbst ein Video, holen keine
+Geräte und sprechen mit keinem Server. Die App (Burgmeet) hängt ihre Tracks an
+eigene `<video>`-Elemente und gibt sie als `video` herein; alle Texte kommen als
+Props in der Sprache der App.
+
+## Der Raum
+
+```tsx
+<MeetingRoom
+    header={<MeetingHeader title={termin} subtitle={raumCode} status={<RecordingIndicator … />} end={uhr} />}
+    notices={<>{/* Alerts: Verbindung, Gerätefehler, „Ton einschalten" */}</>}
+    stage={
+        <VideoStage labels={…} featured={geteilterBildschirm}>
+            {personen.map((p) => (
+                <ParticipantTile key={p.id} name={p.name} video={<video ref={…} />} muted={…} … />
+            ))}
+        </VideoStage>
+    }
+    overlay={<AdmissionRequests requests={wartende} onAdmit={…} onDeny={…} labels={…} />}
+    prompt={abstimmungLaeuft && <Button>Abstimmung öffnen</Button>}
+    toolbar={<MeetingToolbar label={…} start={uhrUndCode} end={panelsUndVerlassen}>{eigeneGeraete}</MeetingToolbar>}
+    panel={offen && <MeetingRoomPanel title="Chat" closeLabel="Schließen" onClose={…} footer={<ChatComposer … />}>…</MeetingRoomPanel>}
+/>
+```
+
+Gib dem Elternelement die volle Höhe (`h-dvh`). Der Raum scrollt nie als Seite; die
+Bühne bekommt, was übrig bleibt. Es ist immer **höchstens ein Panel** offen.
+
+## Was wohin gehört
+
+| Heute in Burgmeet                            | Baustein                                                      |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `MeetingMeta` (Raumcode, Uhr)                | `MeetingHeader` + `MeetingToolbar` `start`                    |
+| `RecordingStatus`                            | `RecordingIndicator` (alle neun Zustände)                     |
+| `MeetingStage` + `meetingGrid.ts`            | `VideoStage` (rechnet mit `fitTileGrid`)                      |
+| `ScreenShareView`                            | `VideoStage` `featured`                                       |
+| `ParticipantTile`                            | `ParticipantTile`                                             |
+| `MeetingToolbar`                             | `MeetingToolbar` + `MeetingControl`                           |
+| Mikrofon-/Kameraoptionen (Chevron)           | `MeetingControl` `options`                                    |
+| `MeetingReactions`                           | `ReactionPicker` in einem `Popover`                           |
+| `MeetingChat`, `ChatMessage`                 | `MeetingRoomPanel` + `MessageList` + `ChatComposer`           |
+| `ParticipantList`, `GuestAdmissionList`      | `ParticipantList` (mit `waiting`)                             |
+| `GuestAdmissionNotifications`                | `AdmissionRequests` im `overlay`                              |
+| `MeetingPoll`                                | `PollComposer`, `PollBallot`, `PollResults`                   |
+| `ParticipantModeration`, `MeetingModeration` | `Dialog` / `AlertDialog` + `SegmentedChoice` (siehe Prototyp) |
+| `SupportReference` (Vorgangs-ID)             | `SupportReference`                                            |
+| `LobbyPage`, `DeviceCheck`                   | `MeetingLobby` + `DevicePreview` + `AudioLevelMeter`          |
+
+## Regeln, die der Entwurf festhält
+
+1. **Der eigene Zustand ist nie zu übersehen.** Ein ausgeschaltetes Gerät ist rot
+   getönt (`tone="off"`), nicht nur ein durchgestrichenes Symbol. Der Tooltip sagt,
+   was der nächste Klick tut („Mikrofon einschalten").
+2. **Gesperrt heißt: mit Grund.** Ist ein Knopf aus (Vortragsmodus, Sperre durch die
+   Leitung, Verbindungsabgleich), bekommt er `disabledReason`. Er bleibt fokussierbar
+   und erklärt sich.
+3. **Melden ist bernsteinfarben, Sprechen grün.** Eine gehobene Hand ist Ring und
+   Abzeichen mit Platz in der Warteschlange — sichtbar auch ohne Kamera. Wer spricht,
+   bekommt einen grünen Ring. Kacheln springen nie umher.
+4. **Unbekannt ist nicht „aus".** Während des Verbindungsabgleichs `muted` als
+   `undefined` übergeben — dann zeigt die Kachel kein Mikrofonsymbol.
+5. **Keine Toasts.** Hinweise sind `Alert`s im `notices`-Stapel oder im Panel. Fehler
+   mit Server-ID tragen eine `SupportReference`.
+6. **Ein Panel, nicht modal.** Escape schließt es; den Fokus zurück auf den
+   Toolbar-Knopf setzt die App.
+7. **Telefon.** Die Steuerleiste bricht auf zwei Zeilen um, Panels kommen als Sheet von
+   unten, die Lobby zeigt den Weg hinein vor der Vorschau.
+8. **Rechts nach links** funktioniert ohne eigenes Zutun: alles nutzt logische Klassen.
+
+## Was neu ist gegenüber heute
+
+Neu und optional (die Props darf man weglassen): grüner Sprech-Ring (`speaking`),
+schwache Verbindung (`connection`), Anheften (`pinned`), Rollen-Abzeichen auf der
+Kachel (`badge`), Abschnitte und Suche in der Teilnehmerliste, Balken und Anteile im
+Abstimmungsergebnis, der Grund an gesperrten Knöpfen, Titel des Termins im Kopf.
+
+Weggefallen ist nichts. Was der Prototyp nur zeigt, aber nicht als Baustein hat
+(Moderationsdialoge, Bildschirm-Teilen-Panel, Verlassen-Auswahl), sind kleine
+Kompositionen aus `Dialog`, `Popover` und `Button` — die App baut sie wie im Prototyp.
+
+## Offen
+
+- **Chat bearbeiten.** `MessageList` kann löschen und antworten, aber noch nicht
+  bearbeiten (mit „Bearbeitet"-Hinweis). Burgmeet braucht das; es wird eine
+  Erweiterung von `MessageList`, kein eigener Chat.
