@@ -56,7 +56,7 @@ type ButtonProps = React.ComponentProps<'button'> &
         /** Render the child element instead of a `<button>` (e.g. an `<a>` styled as a button), keeping the styling and tooltip. */
         asChild?: boolean;
         /**
-         * Shown on hover and on keyboard focus. Say what a click does, or why the
+         * Shown on hover, on keyboard focus and on a touch long press. Say what a click does, or why the
          * button is disabled — never repeat the visible label. Icon-only sizes
          * always get one: they fall back to `aria-label`, and a string tooltip
          * becomes their `aria-label` when none is given.
@@ -93,8 +93,8 @@ function inertProps(props: React.ComponentProps<'button'>): React.ComponentProps
  * The one button for every action. `variant` sets the emphasis (`default` = the
  * primary action, `outline`, `secondary`, `ghost`, `destructive`, `link`); `size`
  * sets the density (`default`, `xs`, `sm`, `lg`, plus the square icon-only `icon`,
- * `icon-xs`, `icon-sm`, `icon-lg`). Every Button can carry a `tooltip`, shown on hover
- * and on keyboard focus: say what a click does, or why the button is disabled
+ * `icon-xs`, `icon-sm`, `icon-lg`). Every Button can carry a `tooltip`, shown on hover,
+ * on keyboard focus and on a touch long press: say what a click does, or why the button is disabled
  * (a disabled button with a tooltip stays focusable so the reason can be read).
  * Icon-only sizes always show one, taken from `aria-label` when `tooltip` is absent,
  * so give them at least one of the two. To render a link or other element as a
