@@ -6,9 +6,10 @@ export interface InitialsAvatarProps {
     name: string;
     /**
      * Visual size. `sm` for dense list rows, `md` (default) for the standard
-     * student/message row, `lg` for headers.
+     * student/message row, `lg` for headers, `xl` for large placeholder areas
+     * such as a video tile without camera.
      */
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     /**
      * When true, derive a soft per-name background + matching text colour
      * (seeded by the name, so the same person is always the same colour). Off
@@ -23,6 +24,7 @@ const SIZES: Record<NonNullable<InitialsAvatarProps['size']>, string> = {
     sm: 'size-9 text-xs',
     md: 'size-10 text-sm',
     lg: 'size-12 text-base',
+    xl: 'size-20 text-2xl',
 };
 
 /** Deterministic hue (0–359) from a name — stable across renders + SSR. */

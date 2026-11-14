@@ -36,6 +36,9 @@ describe('InitialsAvatar', () => {
         expect(disc().className).toContain('size-9');
         rerender(<InitialsAvatar name="A B" size="lg" />);
         expect(disc().className).toContain('size-12');
+        rerender(<InitialsAvatar name="A B" size="xl" />);
+        expect(disc().className).toContain('size-20');
+        expect(disc().className).toContain('text-2xl');
         rerender(<InitialsAvatar name="A B" />);
         expect(disc().className).toContain('size-10');
     });
