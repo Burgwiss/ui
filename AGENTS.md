@@ -57,8 +57,8 @@ index.ts             export * from './<Name>'
    example text.)
 3. **Tokens, never colours.** `bg-primary`, not `bg-blue-500`. Text on a
    `bg-{tone}/NN` tint uses `text-{tone}-tint-foreground`.
-4. **Every button can explain itself.** `Button` takes a `tooltip` (hover and
-   keyboard focus). Icon-only buttons always have one — their `aria-label` is
+4. **Every button can explain itself.** `Button` takes a `tooltip` (hover,
+   keyboard focus and touch long press). Icon-only buttons always have one — their `aria-label` is
    the tooltip. A disabled button gets one saying why. A text button gets one
    when the click does more than its word says; never repeat the label. Never
    the native `title`. Full guidance: `src/docs/Tooltips.mdx` (Storybook:

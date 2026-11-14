@@ -8,7 +8,9 @@ import * as ButtonStories from '../atoms/Button/Button.stories';
 
 Jeder `Button` kann einen Tooltip tragen. Er erscheint nach 200 ms beim Hovern
 **und** beim Fokus mit der Tab-Taste — eine Tastatur-Nutzerin sieht dasselbe wie
-eine Maus-Nutzerin. Ein Prop, kein eigenes Zusammenstecken:
+eine Maus-Nutzerin. Auf Touch-Geräten öffnet ihn langes Drücken (0,5 s); er
+schließt 1,5 s nach dem Loslassen oder beim nächsten Tippen daneben, und dieses
+Drücken löst den Button nicht aus. Ein Prop, kein eigenes Zusammenstecken:
 
 ```tsx
 <Button tooltip="Kurs für alle Teilnehmenden sichtbar machen">Veröffentlichen</Button>
@@ -35,8 +37,8 @@ eine Maus-Nutzerin. Ein Prop, kein eigenes Zusammenstecken:
 - **Kurz.** Ein Satz, ohne Punkt am Ende, etwa 60 Zeichen. Wer mehr erklären muss,
   braucht einen Hilfetext auf der Seite, keinen Tooltip.
 - **Du-Form**, wie die ganze Oberfläche.
-- **Nie das einzige Wissen.** Auf Touch-Geräten gibt es kein Hovern. Was man
-  wissen _muss_, steht sichtbar auf der Seite; der Tooltip ergänzt nur.
+- **Nie das einzige Wissen.** Auf Touch-Geräten sieht ihn nur, wer lange drückt.
+  Was man wissen _muss_, steht sichtbar auf der Seite; der Tooltip ergänzt nur.
 - **Ein Text-Prop aus der App** — die Bibliothek bringt keine eigenen Texte mit.
   In Burgwiss also `tooltip={t('courses.publish.hint')}`.
 
